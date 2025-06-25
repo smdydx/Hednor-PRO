@@ -10,9 +10,9 @@ import ButtonSecondary from "@/shared/Button/ButtonSecondary";
 import Input from "@/shared/Input/Input";
 import { avatarImgs } from "@/contains/fakeData";
 import Image from "next/image";
-
 import Select from "@/shared/Select/Select";
 import toast from "react-hot-toast";
+import getCurrentUser from "@/utils/api/user";
 
 const AccountPage = () => {
   const [addresses, setAddresses] = useState([
@@ -90,9 +90,6 @@ const AccountPage = () => {
       setEditingAddressId(id);
     }
   };
-
-
-import getCurrentUser from "@/utils/api/user";
 
 const AccountPage = () => {
   const { data, isLoading } = getCurrentUser();
