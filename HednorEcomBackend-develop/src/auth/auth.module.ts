@@ -11,7 +11,7 @@ import { Auth, AuthSchema } from './schemas/auth.schema';
   imports: [
     MongooseModule.forFeature([{ name: Auth.name, schema: AuthSchema }]),
     JwtModule.register({
-      secret: 'SECRET_KEY', // You should use process.env.JWT_SECRET
+      secret: process.env.JWT_SECRET || 'SECRET_KEY',
       signOptions: { expiresIn: '1d' },
     }),
   ],

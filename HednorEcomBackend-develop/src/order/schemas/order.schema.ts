@@ -75,8 +75,4 @@ status: string;
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 
-  @Prop({ default: '' }) // Initially empty
-  tracking: string;
-}
-
 export const OrderSchema = SchemaFactory.createForClass(Order);
