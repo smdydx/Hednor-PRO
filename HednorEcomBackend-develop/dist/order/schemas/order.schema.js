@@ -72,6 +72,5 @@ exports.Order = Order = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Order);
 exports.OrderSchema = mongoose_1.SchemaFactory.createForClass(Order);
-tracking: string;
 exports.OrderSchema = mongoose_1.SchemaFactory.createForClass(Order);
 //# sourceMappingURL=order.schema.js.map
