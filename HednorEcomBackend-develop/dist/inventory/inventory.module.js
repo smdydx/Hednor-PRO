@@ -28,4 +28,6 @@ exports.InventoryModule = InventoryModule = __decorate([
         exports: [inventory_service_1.InventoryService],
     })
 ], InventoryModule);
+e;
+{ }
 //# sourceMappingURL=inventory.module.js.map

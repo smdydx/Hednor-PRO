@@ -29,7 +29,7 @@ exports.AppModule = AppModule = __decorate([
                 driver: apollo_1.ApolloDriver,
                 autoSchemaFile: (0, path_1.join)(process.cwd(), 'src/schema.gql'),
             }),
-            mongoose_1.MongooseModule.forRoot('mongodb+srv://hobecin836:root@cluster0.7ih10ou.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'),
+            mongoose_1.MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/hednor'),
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             user_module_1.UserModule,
             auth_module_1.AuthModule,
