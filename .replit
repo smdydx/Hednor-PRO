@@ -4,7 +4,7 @@ modules = ["nodejs-20", "web"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Run Backend"
+runButton = "Run Full Stack App"
 
 [[workflows.workflow]]
 name = "Run Backend"
@@ -19,6 +19,19 @@ args = "cd HednorEcomBackend-develop && npm install && npm run start:dev"
 name = "Run Frontend"
 author = 44259490
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd HednorFrontend-develop && npm install && npm run dev"
+
+[[workflows.workflow]]
+name = "Run Full Stack App"
+author = 44259490
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd HednorEcomBackend-develop && npm install && npm run start:dev"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
