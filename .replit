@@ -40,3 +40,7 @@ args = "cd HednorFrontend-develop && npm install && npm run dev"
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[[ports]]
+localPort = 4000
+externalPort = 3000
