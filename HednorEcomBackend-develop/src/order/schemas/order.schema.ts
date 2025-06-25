@@ -69,6 +69,12 @@ status: string;
   @Prop({ required: true })
   address: string;
 
+  @Prop({ default: '' })
+  tracking: string;
+}
+
+export const OrderSchema = SchemaFactory.createForClass(Order);
+
   @Prop({ default: '' }) // Initially empty
   tracking: string;
 }

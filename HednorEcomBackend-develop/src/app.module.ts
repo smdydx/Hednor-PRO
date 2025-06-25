@@ -23,7 +23,7 @@ import { ConfigModule } from '@nestjs/config';
       driver: ApolloDriver, // 👈 required in v10
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
-    MongooseModule.forRoot('mongodb+srv://hobecin836:root@cluster0.7ih10ou.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/hednor'),
     ConfigModule.forRoot({ isGlobal: true }), // .env support
     UserModule,
     AuthModule,

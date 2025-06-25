@@ -2,3 +2,15 @@ modules = ["nodejs-20", "web"]
 
 [nix]
 channel = "stable-24_05"
+
+[workflows]
+runButton = "Run Backend"
+
+[[workflows.workflow]]
+name = "Run Backend"
+author = 44259490
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd HednorEcomBackend-develop && npm install && npm run start:dev"
