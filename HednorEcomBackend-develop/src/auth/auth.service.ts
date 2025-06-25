@@ -18,7 +18,7 @@ export class AuthService {
     private jwtService: JwtService, // <-- yeh inject karna bhi zaruri hai
   ) {}
 
-  async signup(dto: CreateAuthDto): Promise<{ message: string; user: Auth }> {
+  async signup(dto: CreateAuthDto): Promise<{ message: string; user: Auth; access_token: string }> {
     const { username, email, password } = dto;
   
     const existingUser = await this.authModel.findOne({ email });
@@ -36,10 +36,15 @@ export class AuthService {
     });
   
     await newUser.save();
+
+    // ✅ Generate JWT token for immediate login
+    const payload = { id: newUser._id, email: newUser.email };
+    const access_token = this.jwtService.sign(payload);
   
     return {
       message: 'User registered successfully',
       user: newUser,
+      access_token,
     };
   }
 

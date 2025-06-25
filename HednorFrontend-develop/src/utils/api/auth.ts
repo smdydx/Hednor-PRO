@@ -21,7 +21,7 @@ export const loginAuth = async ({ email, password }: { email: string; password: 
 export const signupAuth = async ({ name, email, password }: { name: string; email: string; password: string }) => {
   try {
     const response = await axios.post(`${BASE_URL}/auth/signup`, {
-      displayName: name,
+      username: name,
       email,
       password,
     });
