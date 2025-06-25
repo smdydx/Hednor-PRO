@@ -4,13 +4,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ Enable CORS here with custom config
+  // ✅ Enable CORS for frontend communication
   app.enableCors({
-    origin: 'http://localhost:3000', // your frontend's URL
-    methods: 'GET,POST,PUT,DELETE,PATCH',
+    origin: true, // Allow all origins in development
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
-  await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
+  // ✅ Add global API prefix
+  app.setGlobalPrefix('api');
+
+  await app.listen(process.env.PORT ?? 4000, '0.0.0.0'); // Bind to 0.0.0.0 for Replit
+  console.log('🚀 Backend server running on http://0.0.0.0:4000');
 }
 bootstrap();
