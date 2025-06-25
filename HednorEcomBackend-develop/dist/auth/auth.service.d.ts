@@ -10,6 +10,7 @@ export declare class AuthService {
     signup(dto: CreateAuthDto): Promise<{
         message: string;
         user: Auth;
+        access_token: string;
     }>;
     login(dto: LoginAuthDto): Promise<{
         message: string;

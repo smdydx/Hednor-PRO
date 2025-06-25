@@ -40,9 +40,12 @@ let AuthService = class AuthService {
             password: hashedPassword,
         });
         await newUser.save();
+        const payload = { id: newUser._id, email: newUser.email };
+        const access_token = this.jwtService.sign(payload);
         return {
             message: 'User registered successfully',
             user: newUser,
+            access_token,
         };
     }
     async login(dto) {

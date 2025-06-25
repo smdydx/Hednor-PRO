@@ -7,6 +7,7 @@ export declare class AuthController {
     signup(createAuthDto: CreateAuthDto): Promise<{
         message: string;
         user: import("./schemas/auth.schema").Auth;
+        access_token: string;
     }>;
     login(loginDto: LoginAuthDto): Promise<{
         message: string;
