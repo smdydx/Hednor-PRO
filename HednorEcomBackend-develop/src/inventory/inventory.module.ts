@@ -15,4 +15,4 @@ import { product, ProductSchema } from '../product/product.model'; // ✅ Produc
   providers: [InventoryService, InventoryResolver],
   exports: [InventoryService],
 })
-export class InventoryModule {}e {}
+export class InventoryModule {}
