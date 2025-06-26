@@ -24,7 +24,16 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     async register(createAuthDto) {
-        return this.authService.signup(createAuthDto);
+        try {
+            console.log('Register endpoint called with:', createAuthDto);
+            const result = await this.authService.signup(createAuthDto);
+            console.log('Registration successful');
+            return result;
+        }
+        catch (error) {
+            console.error('Registration failed:', error.message);
+            throw error;
+        }
     }
     async login(loginAuthDto) {
         return this.authService.login(loginAuthDto);
