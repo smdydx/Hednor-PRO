@@ -16,6 +16,9 @@ export declare class RefundService {
         total: number;
     }>;
     findOne(id: string, userId: string): Promise<Refund>;
+    requestRefund(input: any): Promise<Refund>;
+    updateRefundStatus(input: any): Promise<Refund>;
+    getRefundsByUser(userId: string): Promise<Refund[]>;
     updateStatus(id: string, status: string, adminNotes?: string): Promise<Refund>;
     cancelRefund(id: string, userId: string): Promise<Refund>;
 }

@@ -17,7 +17,7 @@ const common_1 = require("@nestjs/common");
 const order_service_1 = require("./order.service");
 const create_order_input_1 = require("./dto/create-order.input");
 const update_order_delivery_input_1 = require("./dto/update-order-delivery.input");
-const jwt_strategy_1 = require("../auth/jwt.strategy");
+const passport_1 = require("@nestjs/passport");
 let OrderController = class OrderController {
     orderService;
     constructor(orderService) {
@@ -48,7 +48,7 @@ let OrderController = class OrderController {
 exports.OrderController = OrderController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -64,7 +64,7 @@ __decorate([
 ], OrderController.prototype, "updateOrderDelivery", null);
 __decorate([
     (0, common_1.Put)('cancel/:orderId'),
-    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Param)('orderId')),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -73,7 +73,7 @@ __decorate([
 ], OrderController.prototype, "cancelOrder", null);
 __decorate([
     (0, common_1.Get)('user'),
-    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
