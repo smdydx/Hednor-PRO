@@ -15,119 +15,83 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderController = void 0;
 const common_1 = require("@nestjs/common");
 const order_service_1 = require("./order.service");
-const passport_1 = require("@nestjs/passport");
+const create_order_input_1 = require("./dto/create-order.input");
+const update_order_delivery_input_1 = require("./dto/update-order-delivery.input");
+const jwt_strategy_1 = require("../auth/jwt.strategy");
 let OrderController = class OrderController {
     orderService;
     constructor(orderService) {
         this.orderService = orderService;
     }
-    async create(createOrderDto, req) {
-        return this.orderService.create({
+    async createOrder(createOrderDto, req) {
+        return this.orderService.createOrder({
             ...createOrderDto,
-            userId: req.user._id,
-            userEmail: req.user.email,
+            userId: req.user._id
         });
     }
-    async findAll(req, page = '1', limit = '10', status) {
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        return this.orderService.findUserOrders(req.user._id, pageNum, limitNum, status);
+    async updateOrderDelivery(updateOrderDeliveryDto) {
+        return this.orderService.updateOrderDelivery(updateOrderDeliveryDto);
     }
-    async findAllAdmin(page = '1', limit = '10', status) {
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        return this.orderService.findAllOrders(pageNum, limitNum, status);
+    async cancelOrder(orderId, req) {
+        return this.orderService.cancelOrder(orderId, req.user._id);
     }
-    async findOne(id, req) {
-        return this.orderService.findOne(id, req.user._id);
+    async getUserOrders(req) {
+        return this.orderService.findOrdersByUser(req.user._id);
     }
-    async updateStatus(id, status) {
-        return this.orderService.updateStatus(id, status);
+    async getOrder(orderId) {
+        return this.orderService.findOrderById(orderId);
     }
-    async cancelOrder(id, req) {
-        return this.orderService.cancelOrder(id, req.user._id);
-    }
-    async trackOrder(trackingNumber) {
-        return this.orderService.trackOrder(trackingNumber);
-    }
-    async confirmPayment(id) {
-        return this.orderService.confirmPayment(id);
+    async getAllOrders() {
+        return this.orderService.getAllOrders();
     }
 };
 exports.OrderController = OrderController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [create_order_input_1.CreateOrderDto, Object]),
     __metadata("design:returntype", Promise)
-], OrderController.prototype, "create", null);
+], OrderController.prototype, "createOrder", null);
 __decorate([
-    (0, common_1.Get)(),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Query)('page')),
-    __param(2, (0, common_1.Query)('limit')),
-    __param(3, (0, common_1.Query)('status')),
+    (0, common_1.Put)('delivery'),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String, String]),
+    __metadata("design:paramtypes", [update_order_delivery_input_1.UpdateOrderDeliveryDto]),
     __metadata("design:returntype", Promise)
-], OrderController.prototype, "findAll", null);
+], OrderController.prototype, "updateOrderDelivery", null);
 __decorate([
-    (0, common_1.Get)('admin/all'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('status')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
-], OrderController.prototype, "findAllAdmin", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], OrderController.prototype, "findOne", null);
-__decorate([
-    (0, common_1.Patch)(':id/status'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('status')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", Promise)
-], OrderController.prototype, "updateStatus", null);
-__decorate([
-    (0, common_1.Patch)(':id/cancel'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
+    (0, common_1.Put)('cancel/:orderId'),
+    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('orderId')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "cancelOrder", null);
 __decorate([
-    (0, common_1.Get)('tracking/:trackingNumber'),
-    __param(0, (0, common_1.Param)('trackingNumber')),
+    (0, common_1.Get)('user'),
+    (0, common_1.UseGuards)(jwt_strategy_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], OrderController.prototype, "trackOrder", null);
+], OrderController.prototype, "getUserOrders", null);
 __decorate([
-    (0, common_1.Post)(':id/payment/confirm'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(':orderId'),
+    __param(0, (0, common_1.Param)('orderId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], OrderController.prototype, "confirmPayment", null);
+], OrderController.prototype, "getOrder", null);
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "getAllOrders", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('orders'),
     __metadata("design:paramtypes", [order_service_1.OrderService])

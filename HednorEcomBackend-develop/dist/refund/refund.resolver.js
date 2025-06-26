@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefundResolver = void 0;
 const graphql_1 = require("@nestjs/graphql");
@@ -38,14 +39,14 @@ __decorate([
     (0, graphql_1.Mutation)(() => refund_model_1.Refund),
     __param(0, (0, graphql_1.Args)('input')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_refund_input_1.CreateRefundInput]),
+    __metadata("design:paramtypes", [typeof (_a = typeof create_refund_input_1.CreateRefundInput !== "undefined" && create_refund_input_1.CreateRefundInput) === "function" ? _a : Object]),
     __metadata("design:returntype", Promise)
 ], RefundResolver.prototype, "requestRefund", null);
 __decorate([
     (0, graphql_1.Mutation)(() => refund_model_1.Refund),
     __param(0, (0, graphql_1.Args)('input')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [update_refund_status_input_1.UpdateRefundStatusInput]),
+    __metadata("design:paramtypes", [typeof (_b = typeof update_refund_status_input_1.UpdateRefundStatusInput !== "undefined" && update_refund_status_input_1.UpdateRefundStatusInput) === "function" ? _b : Object]),
     __metadata("design:returntype", Promise)
 ], RefundResolver.prototype, "updateRefundStatus", null);
 __decorate([

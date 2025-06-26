@@ -1,53 +1,26 @@
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 export type OrderDocument = Order & Document;
 export declare class Order {
-    userId: Types.ObjectId;
-    userEmail: string;
-    trackingNumber: string;
-    items: Array<{
-        productId: Types.ObjectId;
-        name: string;
-        price: number;
-        quantity: number;
-        image?: string;
-    }>;
-    totalAmount: number;
+    orderId: string;
     status: string;
-    paymentStatus: string;
-    shippingAddress: {
-        firstName: string;
-        lastName: string;
-        address: string;
-        city: string;
-        state: string;
-        zipCode: string;
-        country: string;
-        phone: string;
-    };
-    billingAddress: {
-        firstName: string;
-        lastName: string;
-        address: string;
-        city: string;
-        state: string;
-        zipCode: string;
-        country: string;
-    };
-    paymentMethod: string;
-    shippingMethod: string;
-    shippingCost: number;
-    tax: number;
-    discount: number;
-    notes: string;
-    estimatedDeliveryDate: Date;
-    actualDeliveryDate: Date;
+    totalAmount: number;
+    coupanId: string[];
+    cartId: string;
+    paymentId: string;
+    userId: string;
+    address: string;
+    tracking: string;
+    cartItems: {
+        productId: string;
+        quantity: number;
+    }[];
 }
 export declare const OrderSchema: import("mongoose").Schema<Order, import("mongoose").Model<Order, any, any, any, Document<unknown, any, Order> & Order & {
-    _id: Types.ObjectId;
+    _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;
 }, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, Order, Document<unknown, {}, import("mongoose").FlatRecord<Order>> & import("mongoose").FlatRecord<Order> & {
-    _id: Types.ObjectId;
+    _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;
 }>;

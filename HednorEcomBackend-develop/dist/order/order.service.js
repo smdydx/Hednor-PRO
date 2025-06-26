@@ -15,8 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
-const order_schema_1 = require("./schemas/order.schema");
 const mongoose_2 = require("mongoose");
+const order_schema_1 = require("./schemas/order.schema");
 const inventory_service_1 = require("../inventory/inventory.service");
 const email_service_1 = require("../email/email.service");
 let OrderService = class OrderService {
@@ -28,257 +28,93 @@ let OrderService = class OrderService {
         this.inventoryService = inventoryService;
         this.emailService = emailService;
     }
-    async createOrder(input) {
-        const { userId, cartItems, totalAmount, coupanId, paymentId, cartId } = input;
-        const stockItems = cartItems.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-        }));
-        await this.inventoryService.deductStock(stockItems);
-        const newOrder = new this.orderModel({
-            userId,
-            cartId,
-            paymentId,
-            totalAmount,
-            coupanId,
-            orderId: input.orderId,
-            address: input.address,
-            tracking: '',
-            status: 'pending',
-            createdAt: new Date(),
-        });
-        const savedOrder = await newOrder.save();
-        const customerEmail = 'imranahmad9847@gmail.com';
-        await this.emailService.sendEmail({
-            to: customerEmail,
-            subject: 'Order Confirmation',
-            text: `Your order (${input.orderId}) has been placed successfully.`,
-            html: `
-        <h2>Thanks for your order!</h2>
-        <p><strong>Order ID:</strong> ${input.orderId}</p>
-        <p><strong>Total:</strong> ₹${totalAmount}</p>
-      `,
-        });
-        return savedOrder;
+    async createOrder(createOrderDto) {
+        try {
+            await this.inventoryService.deductStock(createOrderDto.cartItems);
+            const order = new this.orderModel({
+                ...createOrderDto,
+                status: 'pending',
+            });
+            const savedOrder = await order.save();
+            await this.emailService.sendEmail({
+                to: 'customer@example.com',
+                subject: 'Order Confirmation',
+                text: `Your order (${savedOrder.orderId}) has been placed successfully.`,
+                html: `
+          <h2>Order Confirmation</h2>
+          <p><strong>Order ID:</strong> ${savedOrder.orderId}</p>
+          <p><strong>Total Amount:</strong> $${savedOrder.totalAmount}</p>
+          <p><strong>Status:</strong> ${savedOrder.status}</p>
+          <p>Thank you for your order!</p>
+        `,
+            });
+            return savedOrder;
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(`Failed to create order: ${error.message}`);
+        }
     }
-    async updateOrderDelivery(input) {
-        const { orderId, status, tracking } = input;
-        const updateFields = {};
-        if (status)
-            updateFields.status = status;
-        if (tracking)
-            updateFields.tracking = tracking;
-        const order = await this.orderModel.findOneAndUpdate({ orderId }, updateFields, { new: true });
+    async updateOrderDelivery(updateOrderDeliveryDto) {
+        const order = await this.orderModel.findOne({ orderId: updateOrderDeliveryDto.orderId });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
         }
-        const customerEmail = 'imranahmad9847@gmail.com';
+        order.status = updateOrderDeliveryDto.status;
+        if (updateOrderDeliveryDto.tracking) {
+            order.tracking = updateOrderDeliveryDto.tracking;
+        }
+        const updatedOrder = await order.save();
         await this.emailService.sendEmail({
-            to: customerEmail,
-            subject: `Order Update: ${order.status}`,
+            to: 'customer@example.com',
+            subject: 'Order Status Update',
             text: `Your order (${order.orderId}) status has been updated to "${order.status}".`,
             html: `
-        <h2>Your order status has been updated</h2>
+        <h2>Order Status Update</h2>
         <p><strong>Order ID:</strong> ${order.orderId}</p>
         <p><strong>New Status:</strong> ${order.status}</p>
         ${order.tracking
                 ? `<p><strong>Tracking Info:</strong> ${order.tracking}</p>`
                 : ''}
-        <p>Thank you for shopping with us!</p>
+        <p>Thank you for your patience!</p>
       `,
         });
-        return order;
+        return updatedOrder;
     }
     async cancelOrder(orderId, userId) {
+        const order = await this.orderModel.findOne({ orderId, userId });
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        if (order.status === 'delivered' || order.status === 'shipped') {
+            throw new common_1.ForbiddenException('Cannot cancel order that has been shipped or delivered');
+        }
+        order.status = 'cancelled';
+        const cancelledOrder = await order.save();
+        await this.emailService.sendEmail({
+            to: 'customer@example.com',
+            subject: 'Order Cancelled',
+            text: `Your order (${order.orderId}) has been cancelled.`,
+            html: `
+        <h2>Order Cancelled</h2>
+        <p><strong>Order ID:</strong> ${order.orderId}</p>
+        <p>Your order has been successfully cancelled.</p>
+        <p>If you have any questions, please contact our support team.</p>
+      `,
+        });
+        return cancelledOrder;
+    }
+    async findOrdersByUser(userId) {
+        return this.orderModel.find({ userId }).exec();
+    }
+    async findOrderById(orderId) {
         const order = await this.orderModel.findOne({ orderId });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
         }
-        if (order.userId.toString() !== userId.toString()) {
-            throw new common_1.ForbiddenException('You are not allowed to cancel this order');
-        }
-        if (!['pending', 'confirmed'].includes(order.status)) {
-            throw new common_1.BadRequestException('Order cannot be cancelled at this stage');
-        }
-        order.status = 'cancelled';
-        await order.save();
-        await this.inventoryService.restoreStock(order.items);
-        const customerEmail = 'imranahmad9847@gmail.com';
-        const totalAmount = order.totalAmount || 'N/A';
-        await this.emailService.sendEmail({
-            to: customerEmail,
-            subject: 'Order Cancellation',
-            text: `Your order (${order.orderId}) has been cancelled.`,
-            html: `
-        <h2>Your order has been cancelled</h2>
-        <p><strong>Order ID:</strong> ${order.orderId}</p>
-        <p><strong>Total:</strong> ₹${totalAmount}</p>
-        <p>We're sorry to see you cancel. If you have any questions, feel free to contact support.</p>
-      `,
-        });
         return order;
     }
-};
-exports.OrderService = OrderService;
-exports.OrderService = OrderService = __decorate([
-    (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model,
-        inventory_service_1.InventoryService,
-        email_service_1.EmailService])
-], OrderService);
-let OrderService = class OrderService {
-    orderModel;
-    inventoryService;
-    emailService;
-    constructor(orderModel, inventoryService, emailService) {
-        this.orderModel = orderModel;
-        this.inventoryService = inventoryService;
-        this.emailService = emailService;
-    }
-    async create(createOrderDto) {
-        try {
-            await this.inventoryService.deductStock(createOrderDto.items);
-            const trackingNumber = 'TRK' + Date.now() + Math.random().toString(36).substr(2, 9);
-            const totalAmount = createOrderDto.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-            const order = new this.orderModel({
-                ...createOrderDto,
-                trackingNumber,
-                totalAmount,
-                status: 'pending',
-                paymentStatus: 'pending',
-            });
-            const savedOrder = await order.save();
-            await this.emailService.sendOrderConfirmation(createOrderDto.userEmail, savedOrder.toObject());
-            return {
-                message: 'Order created successfully',
-                order: savedOrder,
-            };
-        }
-        catch (error) {
-            throw new common_1.BadRequestException(error.message || 'Failed to create order');
-        }
-    }
-    async findUserOrders(userId, page = 1, limit = 10, status) {
-        const skip = (page - 1) * limit;
-        let query = { userId };
-        if (status) {
-            query.status = status;
-        }
-        const orders = await this.orderModel
-            .find(query)
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 })
-            .exec();
-        const total = await this.orderModel.countDocuments(query);
-        return {
-            orders,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
-    }
-    async findAllOrders(page = 1, limit = 10, status) {
-        const skip = (page - 1) * limit;
-        let query = {};
-        if (status) {
-            query.status = status;
-        }
-        const orders = await this.orderModel
-            .find(query)
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 })
-            .exec();
-        const total = await this.orderModel.countDocuments(query);
-        return {
-            orders,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
-    }
-    async findOne(id, userId) {
-        const order = await this.orderModel.findById(id).exec();
-        if (!order) {
-            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
-        }
-        if (userId && order.userId.toString() !== userId) {
-            throw new common_1.ForbiddenException('You can only view your own orders');
-        }
-        return { order };
-    }
-    async updateStatus(id, status) {
-        const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            throw new common_1.BadRequestException('Invalid status');
-        }
-        const order = await this.orderModel.findByIdAndUpdate(id, { status, updatedAt: new Date() }, { new: true }).exec();
-        if (!order) {
-            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
-        }
-        await this.emailService.sendOrderStatusUpdate(order.userEmail, order.toObject());
-        return {
-            message: 'Order status updated successfully',
-            order,
-        };
-    }
-    async cancelOrder(id, userId) {
-        const order = await this.orderModel.findById(id).exec();
-        if (!order) {
-            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
-        }
-        if (order.userId.toString() !== userId) {
-            throw new common_1.ForbiddenException('You can only cancel your own orders');
-        }
-        if (order.status === 'shipped' || order.status === 'delivered') {
-            throw new common_1.BadRequestException('Cannot cancel shipped or delivered orders');
-        }
-        if (order.status === 'cancelled') {
-            throw new common_1.BadRequestException('Order is already cancelled');
-        }
-        await this.inventoryService.restoreStock(order.items);
-        order.status = 'cancelled';
-        order.updatedAt = new Date();
-        await order.save();
-        return {
-            message: 'Order cancelled successfully',
-            order,
-        };
-    }
-    async trackOrder(trackingNumber) {
-        const order = await this.orderModel
-            .findOne({ trackingNumber })
-            .select('trackingNumber status createdAt updatedAt items totalAmount')
-            .exec();
-        if (!order) {
-            throw new common_1.NotFoundException(`Order with tracking number ${trackingNumber} not found`);
-        }
-        return { order };
-    }
-    async confirmPayment(id) {
-        const order = await this.orderModel.findById(id).exec();
-        if (!order) {
-            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
-        }
-        if (order.paymentStatus === 'paid') {
-            throw new common_1.BadRequestException('Payment already confirmed');
-        }
-        order.paymentStatus = 'paid';
-        order.status = 'confirmed';
-        order.updatedAt = new Date();
-        await order.save();
-        return {
-            message: 'Payment confirmed successfully',
-            order,
-        };
+    async getAllOrders() {
+        return this.orderModel.find().exec();
     }
 };
 exports.OrderService = OrderService;

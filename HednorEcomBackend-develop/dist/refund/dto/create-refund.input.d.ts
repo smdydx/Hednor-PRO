@@ -1,5 +1,6 @@
-export declare class CreateRefundInput {
+export declare class CreateRefundDto {
     orderId: string;
-    userId: string;
     reason: string;
+    amount: number;
+    description?: string;
 }

@@ -1,4 +1,5 @@
-export declare class UpdateRefundStatusInput {
-    orderId: string;
+export declare class UpdateRefundStatusDto {
+    refundId: string;
     status: string;
+    adminNotes?: string;
 }

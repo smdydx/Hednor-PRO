@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderResolver = void 0;
 const graphql_1 = require("@nestjs/graphql");
@@ -41,14 +42,14 @@ __decorate([
     (0, graphql_1.Mutation)(() => order_type_1.OrderType),
     __param(0, (0, graphql_1.Args)('input')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_order_input_1.CreateOrderInput]),
+    __metadata("design:paramtypes", [typeof (_a = typeof create_order_input_1.CreateOrderInput !== "undefined" && create_order_input_1.CreateOrderInput) === "function" ? _a : Object]),
     __metadata("design:returntype", Promise)
 ], OrderResolver.prototype, "createOrder", null);
 __decorate([
     (0, graphql_1.Mutation)(() => order_type_1.OrderType),
     __param(0, (0, graphql_1.Args)('input')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [update_order_delivery_input_1.UpdateOrderDeliveryInput]),
+    __metadata("design:paramtypes", [typeof (_b = typeof update_order_delivery_input_1.UpdateOrderDeliveryInput !== "undefined" && update_order_delivery_input_1.UpdateOrderDeliveryInput) === "function" ? _b : Object]),
     __metadata("design:returntype", Promise)
 ], OrderResolver.prototype, "updateOrderDelivery", null);
 __decorate([

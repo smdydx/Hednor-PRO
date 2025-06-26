@@ -10,9 +10,7 @@ exports.InventoryModule = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const inventory_service_1 = require("./inventory.service");
-const inventory_resolver_1 = require("./inventory.resolver");
 const inventory_controller_1 = require("./inventory.controller");
-const inventory_model_1 = require("./inventory.model");
 const product_model_1 = require("../product/product.model");
 let InventoryModule = class InventoryModule {
 };
@@ -20,13 +18,10 @@ exports.InventoryModule = InventoryModule;
 exports.InventoryModule = InventoryModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([
-                { name: inventory_model_1.Inventory.name, schema: inventory_model_1.InventorySchema },
-                { name: product_model_1.product.name, schema: product_model_1.ProductSchema },
-            ]),
+            mongoose_1.MongooseModule.forFeature([{ name: 'Product', schema: product_model_1.ProductSchema }]),
         ],
         controllers: [inventory_controller_1.InventoryController],
-        providers: [inventory_service_1.InventoryService, inventory_resolver_1.InventoryResolver],
+        providers: [inventory_service_1.InventoryService],
         exports: [inventory_service_1.InventoryService],
     })
 ], InventoryModule);

@@ -15,81 +15,110 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefundService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
-const refund_model_1 = require("./refund.model");
 const mongoose_2 = require("mongoose");
-const order_schema_1 = require("../order/schemas/order.schema");
+const refund_model_1 = require("./refund.model");
 const email_service_1 = require("../email/email.service");
 let RefundService = class RefundService {
     refundModel;
-    orderModel;
     emailService;
-    constructor(refundModel, orderModel, emailService) {
+    constructor(refundModel, emailService) {
         this.refundModel = refundModel;
-        this.orderModel = orderModel;
         this.emailService = emailService;
     }
-    async requestRefund(input) {
-        const existing = await this.refundModel.findOne({ orderId: input.orderId });
-        if (existing)
-            throw new Error('Refund already requested for this order.');
-        const refund = new this.refundModel(input);
+    async create(createRefundDto) {
+        const refund = new this.refundModel({
+            ...createRefundDto,
+            status: 'pending',
+            createdAt: new Date(),
+        });
         const savedRefund = await refund.save();
-        const order = await this.orderModel.findOne({ orderId: input.orderId });
-        let customerEmail = 'imranahmad9847@gmail.com';
-        try {
-            const parsedAddress = JSON.parse(order?.address || '{}');
-            customerEmail = parsedAddress.email || customerEmail;
-        }
-        catch (err) {
-            console.warn('Address parsing failed, using fallback email');
-        }
         await this.emailService.sendEmail({
-            to: customerEmail,
-            subject: 'Refund Request Received',
-            text: `We have received your refund request for Order ID: ${input.orderId}. Our team will review it shortly.`,
+            to: 'customer@example.com',
+            subject: 'Refund Request Submitted',
+            text: `Your refund request has been submitted and is being processed.`,
             html: `
         <h2>Refund Request Submitted</h2>
-        <p><strong>Order ID:</strong> ${input.orderId}</p>
-        <p>Your refund request has been received successfully.</p>
-        <p>We’ll notify you once it's reviewed and processed.</p>
-        <p>Thank you for your patience.</p>
+        <p><strong>Refund ID:</strong> ${savedRefund._id}</p>
+        <p><strong>Order ID:</strong> ${savedRefund.orderId}</p>
+        <p><strong>Amount:</strong> $${savedRefund.amount}</p>
+        <p>We will process your request within 3-5 business days.</p>
       `,
         });
         return savedRefund;
     }
-    async updateRefundStatus(input) {
-        const { orderId, status } = input;
-        const refund = await this.refundModel.findOneAndUpdate({ orderId }, { status }, { new: true });
-        if (!refund) {
-            throw new Error('Refund request not found');
+    async findUserRefunds(userId, page = 1, limit = 10, status) {
+        const query = { userId };
+        if (status) {
+            query.status = status;
         }
-        const order = await this.orderModel.findOne({ orderId });
-        const customerEmail = 'imranahmad9847@gmail.com';
-        await this.emailService.sendEmail({
-            to: customerEmail,
-            subject: `Refund Status Updated: ${status}`,
-            text: `Your refund request for Order ID: ${orderId} is now marked as "${status}".`,
-            html: `
-        <h2>Refund Status Updated</h2>
-        <p><strong>Order ID:</strong> ${orderId}</p>
-        <p><strong>Updated Status:</strong> ${status}</p>
-        <p>We’ll keep you informed about further actions.</p>
-        <p>Thanks for your patience!</p>
-      `,
-        });
+        const refunds = await this.refundModel
+            .find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .exec();
+        const total = await this.refundModel.countDocuments(query);
+        return { refunds, total };
+    }
+    async findAllRefunds(page = 1, limit = 10, status) {
+        const query = {};
+        if (status) {
+            query.status = status;
+        }
+        const refunds = await this.refundModel
+            .find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .exec();
+        const total = await this.refundModel.countDocuments(query);
+        return { refunds, total };
+    }
+    async findOne(id, userId) {
+        const refund = await this.refundModel.findOne({ _id: id, userId });
+        if (!refund) {
+            throw new common_1.NotFoundException('Refund not found');
+        }
         return refund;
     }
-    async getRefundsByUser(userId) {
-        return this.refundModel.find({ userId });
+    async updateStatus(id, status, adminNotes) {
+        const refund = await this.refundModel.findById(id);
+        if (!refund) {
+            throw new common_1.NotFoundException('Refund not found');
+        }
+        refund.status = status;
+        if (adminNotes) {
+            refund.adminNotes = adminNotes;
+        }
+        const updatedRefund = await refund.save();
+        await this.emailService.sendEmail({
+            to: 'customer@example.com',
+            subject: 'Refund Status Update',
+            text: `Your refund request status has been updated to: ${status}`,
+            html: `
+        <h2>Refund Status Update</h2>
+        <p><strong>Refund ID:</strong> ${updatedRefund._id}</p>
+        <p><strong>New Status:</strong> ${status}</p>
+        ${adminNotes ? `<p><strong>Notes:</strong> ${adminNotes}</p>` : ''}
+      `,
+        });
+        return updatedRefund;
+    }
+    async cancelRefund(id, userId) {
+        const refund = await this.refundModel.findOne({ _id: id, userId });
+        if (!refund) {
+            throw new common_1.NotFoundException('Refund not found');
+        }
+        if (refund.status === 'approved' || refund.status === 'processed') {
+            throw new common_1.BadRequestException('Cannot cancel an approved or processed refund');
+        }
+        refund.status = 'cancelled';
+        return refund.save();
     }
 };
 exports.RefundService = RefundService;
 exports.RefundService = RefundService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(refund_model_1.Refund.name)),
-    __param(1, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
-        mongoose_2.Model,
         email_service_1.EmailService])
 ], RefundService);
 //# sourceMappingURL=refund.service.js.map

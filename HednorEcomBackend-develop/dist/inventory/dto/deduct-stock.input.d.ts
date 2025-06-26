@@ -1,4 +1,4 @@
-export declare class DeductStockInput {
+export declare class DeductStockDto {
     productId: string;
     quantity: number;
 }

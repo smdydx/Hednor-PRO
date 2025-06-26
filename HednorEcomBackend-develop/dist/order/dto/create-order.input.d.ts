@@ -1,5 +1,5 @@
-import { DeductStockInput } from "src/inventory/dto/deduct-stock.input";
-export declare class CreateOrderInput {
+import { DeductStockDto } from "../../inventory/dto/deduct-stock.input";
+export declare class CreateOrderDto {
     orderId: string;
     status: string;
     totalAmount: number;
@@ -8,5 +8,5 @@ export declare class CreateOrderInput {
     paymentId: string;
     userId: string;
     address: string;
-    cartItems: DeductStockInput[];
+    cartItems: DeductStockDto[];
 }

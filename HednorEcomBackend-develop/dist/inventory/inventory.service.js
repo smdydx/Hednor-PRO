@@ -16,7 +16,6 @@ exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
-const product_model_1 = require("../product/product.model");
 let InventoryService = class InventoryService {
     productModel;
     constructor(productModel) {
@@ -26,7 +25,7 @@ let InventoryService = class InventoryService {
         for (const item of items) {
             const product = await this.productModel.findById(item.productId);
             if (!product) {
-                throw new common_1.NotFoundException(`Product ${item.productId} not found`);
+                throw new common_1.BadRequestException(`Product with ID ${item.productId} not found`);
             }
             if (product.stock < item.quantity) {
                 throw new common_1.BadRequestException(`Insufficient stock for product ${product.name}`);
@@ -34,45 +33,29 @@ let InventoryService = class InventoryService {
             product.stock -= item.quantity;
             await product.save();
         }
+        return 'Stock successfully deducted';
     }
-    async restoreStock(items) {
-        for (const item of items) {
-            const { productId, quantity } = item;
-            await this.productModel.findByIdAndUpdate(productId, {
-                $inc: { stock: quantity },
-            });
-        }
-    }
-    async getLowStockProducts(threshold = 10) {
-        const products = await this.productModel
-            .find({ stock: { $lte: threshold } })
-            .select('name stock category price')
-            .exec();
-        return {
-            message: `Found ${products.length} products with low stock`,
-            products,
-            threshold,
-        };
-    }
-    async updateStock(productId, newStock) {
-        const product = await this.productModel.findByIdAndUpdate(productId, { stock: newStock }, { new: true });
+    async checkStock(productId) {
+        const product = await this.productModel.findById(productId);
         if (!product) {
-            throw new common_1.NotFoundException(`Product ${productId} not found`);
+            throw new common_1.BadRequestException(`Product with ID ${productId} not found`);
         }
-        return {
-            message: 'Stock updated successfully',
-            product: {
-                id: product._id,
-                name: product.name,
-                stock: product.stock,
-            },
-        };
+        return product.stock;
+    }
+    async updateStock(productId, quantity) {
+        const product = await this.productModel.findById(productId);
+        if (!product) {
+            throw new common_1.BadRequestException(`Product with ID ${productId} not found`);
+        }
+        product.stock = quantity;
+        await product.save();
+        return 'Stock updated successfully';
     }
 };
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(product_model_1.product.name)),
+    __param(0, (0, mongoose_1.InjectModel)('Product')),
     __metadata("design:paramtypes", [mongoose_2.Model])
 ], InventoryService);
 //# sourceMappingURL=inventory.service.js.map

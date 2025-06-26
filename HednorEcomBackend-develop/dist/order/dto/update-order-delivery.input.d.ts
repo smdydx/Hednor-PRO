@@ -1,5 +1,5 @@
-export declare class UpdateOrderDeliveryInput {
+export declare class UpdateOrderDeliveryDto {
     orderId: string;
-    status?: string;
+    status: string;
     tracking?: string;
 }

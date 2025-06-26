@@ -11,48 +11,46 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefundSchema = exports.Refund = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
-const graphql_1 = require("@nestjs/graphql");
 let Refund = class Refund {
-    _id;
     orderId;
     userId;
     reason;
+    amount;
+    description;
     status;
-    requestedAt;
+    adminNotes;
 };
 exports.Refund = Refund;
 __decorate([
-    (0, graphql_1.Field)(() => graphql_1.ID),
-    __metadata("design:type", String)
-], Refund.prototype, "_id", void 0);
-__decorate([
     (0, mongoose_1.Prop)({ required: true }),
-    (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], Refund.prototype, "orderId", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
-    (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], Refund.prototype, "userId", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
-    (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], Refund.prototype, "reason", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' }),
-    (0, graphql_1.Field)(),
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], Refund.prototype, "amount", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Refund.prototype, "description", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 'pending' }),
     __metadata("design:type", String)
 ], Refund.prototype, "status", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ default: Date.now }),
-    (0, graphql_1.Field)(),
-    __metadata("design:type", Date)
-], Refund.prototype, "requestedAt", void 0);
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Refund.prototype, "adminNotes", void 0);
 exports.Refund = Refund = __decorate([
-    (0, mongoose_1.Schema)({ timestamps: true }),
-    (0, graphql_1.ObjectType)()
+    (0, mongoose_1.Schema)({ timestamps: true })
 ], Refund);
 exports.RefundSchema = mongoose_1.SchemaFactory.createForClass(Refund);
 //# sourceMappingURL=refund.model.js.map
