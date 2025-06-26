@@ -88,7 +88,11 @@ let RefundService = class RefundService {
         return await refund.save();
     }
     async updateRefundStatus(input) {
-        return await this.refundModel.findByIdAndUpdate(input.refundId, { status: input.status, adminNotes: input.adminNotes }, { new: true }).exec();
+        const refund = await this.refundModel.findByIdAndUpdate(input.refundId, { status: input.status, adminNotes: input.adminNotes }, { new: true }).exec();
+        if (!refund) {
+            throw new common_1.NotFoundException('Refund not found');
+        }
+        return refund;
     }
     async getRefundsByUser(userId) {
         return await this.refundModel.find({ userId }).exec();
