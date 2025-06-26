@@ -1,7 +1,7 @@
 // services/auth.ts
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://4ce7a542-f80d-465a-ad2f-19dad5b19695-00-3657na841g50s.sisko.replit.dev:4000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:4000` : 'http://localhost:4000');
 
 
 if (!BASE_URL) {
@@ -24,12 +24,21 @@ export const signupAuth = async ({ name, email, password }: { name: string; emai
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
+  console.log('API Request details:');
+  console.log('URL:', `${BASE_URL}/api/auth/register`);
+  console.log('Payload:', { firstName, lastName, email, password: '***' });
+
   try {
     const response = await axios.post(`${BASE_URL}/api/auth/register`, {
       firstName,
       lastName,
       email,
       password,
+    }, {
+      timeout: 30000, // 30 seconds timeout
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     return response.data;
   } catch (error: any) {

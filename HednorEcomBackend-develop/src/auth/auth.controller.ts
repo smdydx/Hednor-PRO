@@ -13,12 +13,19 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() createAuthDto: CreateAuthDto) {
     try {
-      console.log('Register endpoint called with:', createAuthDto);
+      console.log('=== REGISTER ENDPOINT HIT ===');
+      console.log('Request body:', JSON.stringify(createAuthDto, null, 2));
+      console.log('Email:', createAuthDto.email);
+      console.log('FirstName:', createAuthDto.firstName);
+      console.log('LastName:', createAuthDto.lastName);
+      
       const result = await this.authService.signup(createAuthDto);
-      console.log('Registration successful');
+      console.log('Registration successful for:', createAuthDto.email);
       return result;
     } catch (error) {
-      console.error('Registration failed:', error.message);
+      console.error('Registration failed for:', createAuthDto.email);
+      console.error('Error:', error.message);
+      console.error('Stack:', error.stack);
       throw error;
     }
   }
