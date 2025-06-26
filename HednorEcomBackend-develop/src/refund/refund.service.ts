@@ -82,6 +82,27 @@ export class RefundService {
     return refund;
   }
 
+  async requestRefund(input: any): Promise<Refund> {
+    const refund = new this.refundModel({
+      ...input,
+      status: 'PENDING',
+      requestDate: new Date(),
+    });
+    return await refund.save();
+  }
+
+  async updateRefundStatus(input: any): Promise<Refund> {
+    return await this.refundModel.findByIdAndUpdate(
+      input.refundId,
+      { status: input.status, adminNotes: input.adminNotes },
+      { new: true }
+    ).exec();
+  }
+
+  async getRefundsByUser(userId: string): Promise<Refund[]> {
+    return await this.refundModel.find({ userId }).exec();
+  }
+
   async updateStatus(id: string, status: string, adminNotes?: string): Promise<Refund> {
     const refund = await this.refundModel.findById(id);
     if (!refund) {

@@ -2,14 +2,14 @@ import { Controller, Post, Body, Get, Param, Put, UseGuards, Req } from '@nestjs
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.input';
 import { UpdateOrderDeliveryDto } from './dto/update-order-delivery.input';
-import { JwtAuthGuard } from '../auth/jwt.strategy';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   async createOrder(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
     return this.orderService.createOrder({
       ...createOrderDto,
@@ -23,13 +23,13 @@ export class OrderController {
   }
 
   @Put('cancel/:orderId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   async cancelOrder(@Param('orderId') orderId: string, @Req() req: any) {
     return this.orderService.cancelOrder(orderId, req.user._id);
   }
 
   @Get('user')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   async getUserOrders(@Req() req: any) {
     return this.orderService.findOrdersByUser(req.user._id);
   }
