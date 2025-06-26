@@ -1,124 +1,127 @@
-// src/refund/refund.service.ts
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Refund, RefundDocument } from './refund.model';
-import { Model } from 'mongoose';
-import { CreateRefundInput } from './dto/create-refund.input';
-import { UpdateRefundStatusInput } from './dto/update-refund-status.input';
-import { Order } from '../order/schemas/order.schema'; // Order schema ka import
-import { EmailService } from 'src/email/email.service';
 
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Refund, RefundDocument } from './refund.model';
+import { CreateRefundDto } from './dto/create-refund.input';
+import { UpdateRefundStatusDto } from './dto/update-refund-status.input';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class RefundService {
   constructor(
     @InjectModel(Refund.name) private refundModel: Model<RefundDocument>,
-    @InjectModel(Order.name) private orderModel: Model<Order>,
-    private readonly emailService: EmailService,
-
-    
+    private emailService: EmailService,
   ) {}
 
-  // async requestRefund(input: CreateRefundInput): Promise<Refund> {
-  //   const existing = await this.refundModel.findOne({ orderId: input.orderId });
-  //   if (existing) throw new Error('Refund already requested for this order.');
+  async create(createRefundDto: CreateRefundDto): Promise<Refund> {
+    const refund = new this.refundModel({
+      ...createRefundDto,
+      status: 'pending',
+      createdAt: new Date(),
+    });
 
-  //   const refund = new this.refundModel(input);
-  //   return refund.save();
-  // }
-
-
-  async requestRefund(input: CreateRefundInput): Promise<Refund> {
-    const existing = await this.refundModel.findOne({ orderId: input.orderId });
-    if (existing) throw new Error('Refund already requested for this order.');
-
-    const refund = new this.refundModel(input);
     const savedRefund = await refund.save();
 
-    // 👇 Fetch order details
-    const order = await this.orderModel.findOne({ orderId: input.orderId });
-
-    // Assuming address is a stringified object or should be parsed
-    let customerEmail = 'imranahmad9847@gmail.com';
-    try {
-      const parsedAddress = JSON.parse(order?.address || '{}');
-      customerEmail = parsedAddress.email || customerEmail;
-    } catch (err) {
-      console.warn('Address parsing failed, using fallback email');
-    }
-
-    // 👇 Send Email
+    // Send refund request email
     await this.emailService.sendEmail({
-      to: customerEmail,
-      subject: 'Refund Request Received',
-      text: `We have received your refund request for Order ID: ${input.orderId}. Our team will review it shortly.`,
+      to: 'customer@example.com',
+      subject: 'Refund Request Submitted',
+      text: `Your refund request has been submitted and is being processed.`,
       html: `
         <h2>Refund Request Submitted</h2>
-        <p><strong>Order ID:</strong> ${input.orderId}</p>
-        <p>Your refund request has been received successfully.</p>
-        <p>We’ll notify you once it's reviewed and processed.</p>
-        <p>Thank you for your patience.</p>
+        <p><strong>Refund ID:</strong> ${savedRefund._id}</p>
+        <p><strong>Order ID:</strong> ${savedRefund.orderId}</p>
+        <p><strong>Amount:</strong> $${savedRefund.amount}</p>
+        <p>We will process your request within 3-5 business days.</p>
       `,
     });
 
     return savedRefund;
   }
 
-  // async updateRefundStatus(input: UpdateRefundStatusInput): Promise<Refund> {
-  //   const { orderId, status } = input;
-  
-  //   const refund = await this.refundModel.findOneAndUpdate(
-  //     { orderId },
-  //     { status },
-  //     { new: true },
-  //   );
-  
-  //   if (!refund) {
-  //     throw new Error('Refund request not found');
-  //   }
-  
-  //   return refund;
-  // }
-
-  async updateRefundStatus(input: UpdateRefundStatusInput): Promise<Refund> {
-    const { orderId, status } = input;
-  
-    const refund = await this.refundModel.findOneAndUpdate(
-      { orderId },
-      { status },
-      { new: true },
-    );
-  
-    if (!refund) {
-      throw new Error('Refund request not found');
+  async findUserRefunds(userId: string, page = 1, limit = 10, status?: string): Promise<{ refunds: Refund[], total: number }> {
+    const query: any = { userId };
+    if (status) {
+      query.status = status;
     }
-  
-    // 👇 Get order details to fetch email
-    const order = await this.orderModel.findOne({ orderId });
-  
-    // const customerEmail = order?.address?.email || 'fallback@example.com';
 
-    const customerEmail = 'imranahmad9847@gmail.com';
-  
-    // 👇 Send email notification
-    await this.emailService.sendEmail({
-      to: customerEmail,
-      subject: `Refund Status Updated: ${status}`,
-      text: `Your refund request for Order ID: ${orderId} is now marked as "${status}".`,
-      html: `
-        <h2>Refund Status Updated</h2>
-        <p><strong>Order ID:</strong> ${orderId}</p>
-        <p><strong>Updated Status:</strong> ${status}</p>
-        <p>We’ll keep you informed about further actions.</p>
-        <p>Thanks for your patience!</p>
-      `,
-    });
-  
+    const refunds = await this.refundModel
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
+
+    const total = await this.refundModel.countDocuments(query);
+
+    return { refunds, total };
+  }
+
+  async findAllRefunds(page = 1, limit = 10, status?: string): Promise<{ refunds: Refund[], total: number }> {
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+
+    const refunds = await this.refundModel
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
+
+    const total = await this.refundModel.countDocuments(query);
+
+    return { refunds, total };
+  }
+
+  async findOne(id: string, userId: string): Promise<Refund> {
+    const refund = await this.refundModel.findOne({ _id: id, userId });
+    if (!refund) {
+      throw new NotFoundException('Refund not found');
+    }
     return refund;
   }
-  
 
-  async getRefundsByUser(userId: string): Promise<Refund[]> {
-    return this.refundModel.find({ userId });
+  async updateStatus(id: string, status: string, adminNotes?: string): Promise<Refund> {
+    const refund = await this.refundModel.findById(id);
+    if (!refund) {
+      throw new NotFoundException('Refund not found');
+    }
+
+    refund.status = status;
+    if (adminNotes) {
+      refund.adminNotes = adminNotes;
+    }
+
+    const updatedRefund = await refund.save();
+
+    // Send status update email
+    await this.emailService.sendEmail({
+      to: 'customer@example.com',
+      subject: 'Refund Status Update',
+      text: `Your refund request status has been updated to: ${status}`,
+      html: `
+        <h2>Refund Status Update</h2>
+        <p><strong>Refund ID:</strong> ${updatedRefund._id}</p>
+        <p><strong>New Status:</strong> ${status}</p>
+        ${adminNotes ? `<p><strong>Notes:</strong> ${adminNotes}</p>` : ''}
+      `,
+    });
+
+    return updatedRefund;
+  }
+
+  async cancelRefund(id: string, userId: string): Promise<Refund> {
+    const refund = await this.refundModel.findOne({ _id: id, userId });
+    if (!refund) {
+      throw new NotFoundException('Refund not found');
+    }
+
+    if (refund.status === 'approved' || refund.status === 'processed') {
+      throw new BadRequestException('Cannot cancel an approved or processed refund');
+    }
+
+    refund.status = 'cancelled';
+    return refund.save();
   }
 }

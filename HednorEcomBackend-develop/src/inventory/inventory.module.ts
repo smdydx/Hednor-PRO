@@ -1,20 +1,16 @@
+
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InventoryService } from './inventory.service';
-import { InventoryResolver } from './inventory.resolver';
 import { InventoryController } from './inventory.controller';
-import { Inventory, InventorySchema } from './inventory.model';
-import { product, ProductSchema } from '../product/product.model'; // ✅ Product model import
+import { ProductSchema } from '../product/product.model';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Inventory.name, schema: InventorySchema },
-      { name: product.name, schema: ProductSchema }, // ✅ Product model register
-    ]),
+    MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
   ],
   controllers: [InventoryController],
-  providers: [InventoryService, InventoryResolver],
+  providers: [InventoryService],
   exports: [InventoryService],
 })
 export class InventoryModule {}

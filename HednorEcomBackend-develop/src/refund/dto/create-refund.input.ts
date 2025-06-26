@@ -1,14 +1,7 @@
-// src/refund/dto/create-refund.input.ts
-import { InputType, Field } from '@nestjs/graphql';
 
-@InputType()
-export class CreateRefundInput {
-  @Field()
+export class CreateRefundDto {
   orderId: string;
-
-  @Field()
-  userId: string;
-
-  @Field()
   reason: string;
+  amount: number;
+  description?: string;
 }

@@ -1,12 +1,11 @@
-// src/order/order.module.ts
+
 import { Module } from '@nestjs/common';
-import { OrderResolver } from './order.resolver';
-import { OrderController } from './order.controller';
-import { OrderService } from './order.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { OrderService } from './order.service';
+import { OrderController } from './order.controller';
 import { Order, OrderSchema } from './schemas/order.schema';
-import { InventoryModule } from 'src/inventory/inventory.module';
-import { EmailModule } from 'src/email/email.module';
+import { InventoryModule } from '../inventory/inventory.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -15,7 +14,7 @@ import { EmailModule } from 'src/email/email.module';
     EmailModule,
   ],
   controllers: [OrderController],
-  providers: [OrderResolver, OrderService],
-  exports: [MongooseModule], // 👈 VERY IMPORTANT
+  providers: [OrderService],
+  exports: [OrderService],
 })
 export class OrderModule {}

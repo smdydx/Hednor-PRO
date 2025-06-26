@@ -1,98 +1,39 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 
 export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ required: true, type: Types.ObjectId, ref: 'Auth' })
-  userId: Types.ObjectId;
+  @Prop({ required: true })
+  orderId: string;
 
   @Prop({ required: true })
-  userEmail: string;
-
-  @Prop({ required: true, unique: true })
-  trackingNumber: string;
-
-  @Prop([{
-    productId: { type: Types.ObjectId, ref: 'product', required: true },
-    name: { type: String, required: true },
-    price: { type: Number, required: true },
-    quantity: { type: Number, required: true },
-    image: { type: String }
-  }])
-  items: Array<{
-    productId: Types.ObjectId;
-    name: string;
-    price: number;
-    quantity: number;
-    image?: string;
-  }>;
+  status: string;
 
   @Prop({ required: true })
   totalAmount: number;
 
-  @Prop({ 
-    required: true,
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
-  })
-  status: string;
+  @Prop([String])
+  coupanId: string[];
 
-  @Prop({ 
-    required: true,
-    enum: ['pending', 'paid', 'failed', 'refunded'],
-    default: 'pending'
-  })
-  paymentStatus: string;
+  @Prop({ required: true })
+  cartId: string;
 
-  @Prop({ type: Object })
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-    phone: string;
-  };
+  @Prop({ required: true })
+  paymentId: string;
 
-  @Prop({ type: Object })
-  billingAddress: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
+  @Prop({ required: true })
+  userId: string;
+
+  @Prop({ required: true })
+  address: string;
 
   @Prop()
-  paymentMethod: string;
+  tracking: string;
 
-  @Prop()
-  shippingMethod: string;
-
-  @Prop()
-  shippingCost: number;
-
-  @Prop()
-  tax: number;
-
-  @Prop()
-  discount: number;
-
-  @Prop()
-  notes: string;
-
-  @Prop()
-  estimatedDeliveryDate: Date;
-
-  @Prop()
-  actualDeliveryDate: Date;
+  @Prop({ type: [{ productId: String, quantity: Number }] })
+  cartItems: { productId: string; quantity: number }[];
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

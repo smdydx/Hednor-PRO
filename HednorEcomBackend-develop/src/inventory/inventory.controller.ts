@@ -1,49 +1,29 @@
-
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { AuthGuard } from '@nestjs/passport';
+import { DeductStockDto } from './dto/deduct-stock.input';
 
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
-  @Post('deduct')
-  @UseGuards(AuthGuard('jwt'))
-  async deductStock(@Body('items') items: any[]) {
-    await this.inventoryService.deductStock(items);
-    return { message: 'Stock deducted successfully' };
+  @Post('deduct-stock')
+  async deductStock(@Body() items: DeductStockDto[]): Promise<{ message: string }> {
+    const result = await this.inventoryService.deductStock(items);
+    return { message: result };
   }
 
-  @Post('restore')
-  @UseGuards(AuthGuard('jwt'))
-  async restoreStock(@Body('items') items: any[]) {
-    await this.inventoryService.restoreStock(items);
-    return { message: 'Stock restored successfully' };
+  @Get('stock/:productId')
+  async checkStock(@Param('productId') productId: string): Promise<{ stock: number }> {
+    const stock = await this.inventoryService.checkStock(productId);
+    return { stock };
   }
 
-  @Get('low-stock')
-  @UseGuards(AuthGuard('jwt'))
-  async getLowStockProducts(@Query('threshold') threshold: string = '10') {
-    const thresholdNum = parseInt(threshold);
-    return this.inventoryService.getLowStockProducts(thresholdNum);
-  }
-
-  @Patch('update/:productId')
-  @UseGuards(AuthGuard('jwt'))
+  @Put('stock/:productId')
   async updateStock(
     @Param('productId') productId: string,
-    @Body('stock') stock: number,
-  ) {
-    return this.inventoryService.updateStock(productId, stock);
+    @Body() body: { quantity: number }
+  ): Promise<{ message: string }> {
+    const result = await this.inventoryService.updateStock(productId, body.quantity);
+    return { message: result };
   }
 }
