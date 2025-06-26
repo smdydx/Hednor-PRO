@@ -8,10 +8,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefundModule = void 0;
 const common_1 = require("@nestjs/common");
+const refund_resolver_1 = require("./refund.resolver");
+const refund_controller_1 = require("./refund.controller");
+const refund_service_1 = require("./refund.service");
 const mongoose_1 = require("@nestjs/mongoose");
 const refund_model_1 = require("./refund.model");
-const refund_resolver_1 = require("./refund.resolver");
-const refund_service_1 = require("./refund.service");
 const order_module_1 = require("../order/order.module");
 const email_module_1 = require("../email/email.module");
 let RefundModule = class RefundModule {
@@ -24,6 +25,7 @@ exports.RefundModule = RefundModule = __decorate([
             order_module_1.OrderModule,
             email_module_1.EmailModule,
         ],
+        controllers: [refund_controller_1.RefundController],
         providers: [refund_resolver_1.RefundResolver, refund_service_1.RefundService],
     })
 ], RefundModule);

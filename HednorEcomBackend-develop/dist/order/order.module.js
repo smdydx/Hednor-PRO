@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderModule = void 0;
 const common_1 = require("@nestjs/common");
 const order_resolver_1 = require("./order.resolver");
+const order_controller_1 = require("./order.controller");
 const order_service_1 = require("./order.service");
 const mongoose_1 = require("@nestjs/mongoose");
 const order_schema_1 = require("./schemas/order.schema");
@@ -24,6 +25,7 @@ exports.OrderModule = OrderModule = __decorate([
             inventory_module_1.InventoryModule,
             email_module_1.EmailModule,
         ],
+        controllers: [order_controller_1.OrderController],
         providers: [order_resolver_1.OrderResolver, order_service_1.OrderService],
         exports: [mongoose_1.MongooseModule],
     })
