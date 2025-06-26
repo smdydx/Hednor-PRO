@@ -1,33 +1,82 @@
 
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  @Post()
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createProductDto: any) {
+    return this.productService.create(createProductDto);
+  }
+
   @Get()
-  async getAllProducts() {
-    return this.productService.findAll();
+  async findAll(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @Query('category') category?: string,
+    @Query('search') search?: string,
+  ) {
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    return this.productService.findAll(pageNum, limitNum, category, search);
+  }
+
+  @Get('categories')
+  async getCategories() {
+    return this.productService.getCategories();
+  }
+
+  @Get('featured')
+  async getFeaturedProducts() {
+    return this.productService.getFeaturedProducts();
   }
 
   @Get(':id')
-  async getProduct(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
   }
 
-  @Post()
-  async createProduct(@Body() productData: any) {
-    return this.productService.create(productData);
-  }
-
-  @Put(':id')
-  async updateProduct(@Param('id') id: string, @Body() updateData: any) {
-    return this.productService.update(id, updateData);
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async update(@Param('id') id: string, @Body() updateProductDto: any) {
+    return this.productService.update(id, updateProductDto);
   }
 
   @Delete(':id')
-  async deleteProduct(@Param('id') id: string) {
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string) {
     return this.productService.remove(id);
+  }
+
+  @Post(':id/reviews')
+  @UseGuards(AuthGuard('jwt'))
+  async addReview(
+    @Param('id') id: string,
+    @Body() reviewDto: any,
+  ) {
+    return this.productService.addReview(id, reviewDto);
+  }
+
+  @Get(':id/reviews')
+  async getReviews(@Param('id') id: string) {
+    return this.productService.getReviews(id);
   }
 }

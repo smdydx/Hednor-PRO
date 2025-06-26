@@ -239,3 +239,229 @@ export class OrderService {
 
   
 }
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Order, OrderDocument } from './schemas/order.schema';
+import { InventoryService } from '../inventory/inventory.service';
+import { EmailService } from '../email/email.service';
+
+@Injectable()
+export class OrderService {
+  constructor(
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    private inventoryService: InventoryService,
+    private emailService: EmailService,
+  ) {}
+
+  async create(createOrderDto: any) {
+    try {
+      // Check inventory availability
+      await this.inventoryService.deductStock(createOrderDto.items);
+
+      // Generate tracking number
+      const trackingNumber = 'TRK' + Date.now() + Math.random().toString(36).substr(2, 9);
+
+      // Calculate total amount
+      const totalAmount = createOrderDto.items.reduce(
+        (total, item) => total + (item.price * item.quantity),
+        0
+      );
+
+      const order = new this.orderModel({
+        ...createOrderDto,
+        trackingNumber,
+        totalAmount,
+        status: 'pending',
+        paymentStatus: 'pending',
+      });
+
+      const savedOrder = await order.save();
+
+      // Send confirmation email
+      await this.emailService.sendOrderConfirmation(
+        createOrderDto.userEmail,
+        savedOrder.toObject()
+      );
+
+      return {
+        message: 'Order created successfully',
+        order: savedOrder,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to create order');
+    }
+  }
+
+  async findUserOrders(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: string
+  ) {
+    const skip = (page - 1) * limit;
+    let query: any = { userId };
+
+    if (status) {
+      query.status = status;
+    }
+
+    const orders = await this.orderModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const total = await this.orderModel.countDocuments(query);
+
+    return {
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllOrders(
+    page: number = 1,
+    limit: number = 10,
+    status?: string
+  ) {
+    const skip = (page - 1) * limit;
+    let query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    const orders = await this.orderModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const total = await this.orderModel.countDocuments(query);
+
+    return {
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string, userId?: string) {
+    const order = await this.orderModel.findById(id).exec();
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    // Check if user has permission to view this order
+    if (userId && order.userId.toString() !== userId) {
+      throw new ForbiddenException('You can only view your own orders');
+    }
+
+    return { order };
+  }
+
+  async updateStatus(id: string, status: string) {
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException('Invalid status');
+    }
+
+    const order = await this.orderModel.findByIdAndUpdate(
+      id,
+      { status, updatedAt: new Date() },
+      { new: true }
+    ).exec();
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    // Send status update email
+    await this.emailService.sendOrderStatusUpdate(order.userEmail, order.toObject());
+
+    return {
+      message: 'Order status updated successfully',
+      order,
+    };
+  }
+
+  async cancelOrder(id: string, userId: string) {
+    const order = await this.orderModel.findById(id).exec();
+    
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    if (order.userId.toString() !== userId) {
+      throw new ForbiddenException('You can only cancel your own orders');
+    }
+
+    if (order.status === 'shipped' || order.status === 'delivered') {
+      throw new BadRequestException('Cannot cancel shipped or delivered orders');
+    }
+
+    if (order.status === 'cancelled') {
+      throw new BadRequestException('Order is already cancelled');
+    }
+
+    // Restore inventory
+    await this.inventoryService.restoreStock(order.items);
+
+    order.status = 'cancelled';
+    order.updatedAt = new Date();
+    await order.save();
+
+    return {
+      message: 'Order cancelled successfully',
+      order,
+    };
+  }
+
+  async trackOrder(trackingNumber: string) {
+    const order = await this.orderModel
+      .findOne({ trackingNumber })
+      .select('trackingNumber status createdAt updatedAt items totalAmount')
+      .exec();
+
+    if (!order) {
+      throw new NotFoundException(`Order with tracking number ${trackingNumber} not found`);
+    }
+
+    return { order };
+  }
+
+  async confirmPayment(id: string) {
+    const order = await this.orderModel.findById(id).exec();
+    
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    if (order.paymentStatus === 'paid') {
+      throw new BadRequestException('Payment already confirmed');
+    }
+
+    order.paymentStatus = 'paid';
+    order.status = 'confirmed';
+    order.updatedAt = new Date();
+    await order.save();
+
+    return {
+      message: 'Payment confirmed successfully',
+      order,
+    };
+  }
+}

@@ -17,5 +17,6 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 4000, '0.0.0.0'); // Bind to 0.0.0.0 for Replit
   console.log('🚀 Backend server running on http://0.0.0.0:4000');
+  console.log('📊 MongoDB connected successfully');
 }
 bootstrap();

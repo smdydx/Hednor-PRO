@@ -1,123 +1,140 @@
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { LoginAuthDto } from './dto/login-auth.dto';
-import { User } from './Interface/user.interface';
+
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { Auth, AuthDocument } from './schemas/auth.schema';
-import * as bcrypt from 'bcrypt';
-  import { JwtService } from '@nestjs/jwt';
-  import * as nodemailer from 'nodemailer';
-
+import { CreateAuthDto } from './dto/create-auth.dto';
+import { LoginAuthDto } from './dto/login-auth.dto';
 
 @Injectable()
 export class AuthService {
-  
   constructor(
     @InjectModel(Auth.name) private authModel: Model<AuthDocument>,
-    private jwtService: JwtService, // <-- yeh inject karna bhi zaruri hai
+    private jwtService: JwtService,
   ) {}
 
-  async signup(dto: CreateAuthDto): Promise<{ message: string; user: Auth; access_token: string }> {
-    const { username, email, password } = dto;
-  
+  async signup(dto: CreateAuthDto) {
+    const { email, password, firstName, lastName } = dto;
+
+    // Check if user already exists
     const existingUser = await this.authModel.findOne({ email });
     if (existingUser) {
-      throw new BadRequestException('User already exists');
+      throw new BadRequestException('User with this email already exists');
     }
-  
-    // ✅ HASH the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
-  
-    const newUser = new this.authModel({
-      username,
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create user
+    const user = new this.authModel({
       email,
       password: hashedPassword,
+      firstName,
+      lastName,
+      isVerified: true, // Set to true for now, implement email verification later
     });
-  
-    await newUser.save();
 
-    // ✅ Generate JWT token for immediate login
-    const payload = { id: newUser._id, email: newUser.email };
+    await user.save();
+
+    // Generate JWT token
+    const payload = { sub: user._id, email: user.email };
     const access_token = this.jwtService.sign(payload);
-  
+
     return {
       message: 'User registered successfully',
-      user: newUser,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isVerified: user.isVerified,
+      },
       access_token,
     };
   }
 
-  async login(dto: LoginAuthDto): Promise<{ message: string; token: string }> {
+  async login(dto: LoginAuthDto) {
     const { email, password } = dto;
 
-    const user = await this.authModel.findOne({ email });
+    // Find user
+    const user = await this.authModel.findOne({ email }).select('+password');
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    // ✅ Compare password with hashed password
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) {
-      throw new UnauthorizedException('Invalid email or password');
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    // ✅ Generate JWT token
-    const payload = { id: user._id, email: user.email };
+    // Generate JWT token
+    const payload = { sub: user._id, email: user.email };
     const token = this.jwtService.sign(payload);
 
     return {
       message: 'Login successful',
       token,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isVerified: user.isVerified,
+      }
     };
   }
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
+  async forgotPassword(email: string) {
     const user = await this.authModel.findOne({ email });
-    if (!user) throw new NotFoundException('User not found');
-
-    const payload = { email: user.email, id: user._id };
-    const token = this.jwtService.sign(payload, { expiresIn: '10m' });
-
-    const resetLink = `http://localhost:3000/auth/reset-password?token=${token}`; // frontend link if you have
-
-    await this.sendResetEmail(user.email, resetLink);
-
-    return { message: 'Reset link sent to your email' };
-  }
-
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    try {
-      const decoded = this.jwtService.verify(token);
-      const user = await this.authModel.findById(decoded.id);
-      if (!user) throw new NotFoundException('User not found');
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      user.password = hashedPassword;
-      await user.save();
-
-      return { message: 'Password reset successfully' };
-    } catch (err) {
-      throw new BadRequestException('Invalid or expired token');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.passwordResetToken = resetTokenHash;
+    user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    // In production, send email here
+    await this.sendResetEmail(email, resetToken);
+
+    return {
+      message: 'Password reset token sent to email',
+    };
   }
 
-  private async sendResetEmail(to: string, link: string) {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'prakastiwarichs@gmail.com', // 👈 replace
-        pass: 'abcd efgh ijkl mnop',    // 👈 use App Password (not normal pass)
-      },
+  async resetPassword(token: string, newPassword: string) {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await this.authModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() },
     });
 
-    const mailOptions = {
-      from: 'your_email@gmail.com',
-      to,
-      subject: 'Reset your password',
-      html: `<p>Click the link below to reset your password:</p><a href="${link}">${link}</a>`,
-    };
+    if (!user) {
+      throw new BadRequestException('Token is invalid or has expired');
+    }
 
-    await transporter.sendMail(mailOptions);
+    // Update password
+    user.password = await bcrypt.hash(newPassword, 12);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    return {
+      message: 'Password reset successfully',
+    };
+  }
+
+  private async sendResetEmail(email: string, token: string) {
+    // In production, implement actual email sending
+    console.log(`Reset token for ${email}: ${token}`);
   }
 }

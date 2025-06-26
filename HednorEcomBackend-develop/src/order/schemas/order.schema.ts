@@ -1,76 +1,98 @@
-// // src/order/schemas/order.schema.ts
-// import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-// import { Document } from 'mongoose';
 
-// export type OrderDocument = Order & Document;
-
-// @Schema({ timestamps: true })
-// export class Order {
-//   @Prop({ required: true })
-//   userId: string;
-
-//   @Prop({ required: true })
-//   items: string[]; // Simplified
-
-//   @Prop({ required: true })
-//   totalAmount: number;
-
-//   @Prop({ default: 'Pending' })
-//   status: string;
-// }
-
-// export const OrderSchema = SchemaFactory.createForClass(Order);
-
-
-// order.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ required: true, unique: true })
-  orderId: string;
+  @Prop({ required: true, type: Types.ObjectId, ref: 'Auth' })
+  userId: Types.ObjectId;
 
   @Prop({ required: true })
-  items: string[]; // Simplified
+  userEmail: string;
+
+  @Prop({ required: true, unique: true })
+  trackingNumber: string;
+
+  @Prop([{
+    productId: { type: Types.ObjectId, ref: 'product', required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+    image: { type: String }
+  }])
+  items: Array<{
+    productId: Types.ObjectId;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+  }>;
 
   @Prop({ required: true })
   totalAmount: number;
 
-  @Prop({ type: [String], default: [] })
-  coupanIds: string[];
+  @Prop({ 
+    required: true,
+    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending'
+  })
+  status: string;
 
-  // @Prop({ enum: ['Pending', 'Success', 'Failed', 'Rejected', 'Processing'], default: 'Pending' })
-  // status: string;
+  @Prop({ 
+    required: true,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  })
+  paymentStatus: string;
 
-  
+  @Prop({ type: Object })
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+  };
 
-@Prop({
-  type: String,
-  enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled' , 'Processing' , 'Rejected', 'Failed', 'Success'],
-  default: 'pending',
-})
-status: string;
+  @Prop({ type: Object })
+  billingAddress: {
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
 
+  @Prop()
+  paymentMethod: string;
 
+  @Prop()
+  shippingMethod: string;
 
+  @Prop()
+  shippingCost: number;
 
-  @Prop({ required: true })
-  cartId: string;
+  @Prop()
+  tax: number;
 
-  @Prop({ required: true })
-  paymentId: string;
+  @Prop()
+  discount: number;
 
-  @Prop({ required: true })
-  userId: string;
+  @Prop()
+  notes: string;
 
-  @Prop({ required: true })
-  address: string;
+  @Prop()
+  estimatedDeliveryDate: Date;
 
-  @Prop({ default: '' })
-  tracking: string;
+  @Prop()
+  actualDeliveryDate: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

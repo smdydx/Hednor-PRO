@@ -38,5 +38,38 @@ export class InventoryService {
       });
     }
   }
-  
+
+  async getLowStockProducts(threshold: number = 10) {
+    const products = await this.productModel
+      .find({ stock: { $lte: threshold } })
+      .select('name stock category price')
+      .exec();
+
+    return {
+      message: `Found ${products.length} products with low stock`,
+      products,
+      threshold,
+    };
+  }
+
+  async updateStock(productId: string, newStock: number) {
+    const product = await this.productModel.findByIdAndUpdate(
+      productId,
+      { stock: newStock },
+      { new: true }
+    );
+
+    if (!product) {
+      throw new NotFoundException(`Product ${productId} not found`);
+    }
+
+    return {
+      message: 'Stock updated successfully',
+      product: {
+        id: product._id,
+        name: product.name,
+        stock: product.stock,
+      },
+    };
+  }
 }

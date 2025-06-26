@@ -1,20 +1,28 @@
-// src/auth/jwt.strategy.ts
-import { Injectable } from '@nestjs/common';
+
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Auth, AuthDocument } from './schemas/auth.schema';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    @InjectModel(Auth.name) private authModel: Model<AuthDocument>,
+  ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // read token from header
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'SECRET_KEY', // same as used in JwtModule
+      secretOrKey: process.env.JWT_SECRET || 'SECRET_KEY',
     });
   }
 
   async validate(payload: any) {
-    // yahaan payload me wahi aata hai jo tu login ke time bhejta hai
-    return { userId: payload.id, email: payload.email };
+    const user = await this.authModel.findById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 }

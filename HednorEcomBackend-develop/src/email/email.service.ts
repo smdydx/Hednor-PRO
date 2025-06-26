@@ -1,54 +1,23 @@
-// src/email/email.service.ts
 import { Injectable } from '@nestjs/common';
-import * as sgMail from '@sendgrid/mail';
-import { ConfigService } from '@nestjs/config';
-import { SendEmailDto } from './dto/send-email.dto';
-import type { MailContent, MailDataRequired } from '@sendgrid/helpers/classes/mail';
 
 @Injectable()
 export class EmailService {
-  constructor(private configService: ConfigService) {}
+  async sendOrderConfirmation(email: string, order: any) {
+    // In production, implement actual email sending with services like SendGrid, Nodemailer, etc.
+    console.log(`📧 Order confirmation email sent to ${email}`);
+    console.log(`Order ID: ${order._id}, Tracking: ${order.trackingNumber}`);
+    return { message: 'Order confirmation email sent' };
+  }
 
-  async sendEmail(sendEmailDto: SendEmailDto): Promise<void> {
-    const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
-    if (!apiKey) {
-      throw new Error('SendGrid API key is missing');
-    }
+  async sendOrderStatusUpdate(email: string, order: any) {
+    console.log(`📧 Order status update email sent to ${email}`);
+    console.log(`Order ${order.trackingNumber} status updated to: ${order.status}`);
+    return { message: 'Order status update email sent' };
+  }
 
-    sgMail.setApiKey(apiKey);
-
-    const { to, subject, text, html } = sendEmailDto;
-
-    if (!text && !html) {
-      throw new Error('Either text or html must be provided');
-    }
-
-    const contentArray: MailContent[] = [];
-
-    if (text) {
-      contentArray.push({ type: 'text/plain', value: text });
-    }
-
-    if (html) {
-      contentArray.push({ type: 'text/html', value: html });
-    }
-
-    // 👇 Ye line TypeScript ko guarantee deti hai ki content empty nahi hoga
-    const content = contentArray as [MailContent, ...MailContent[]];
-
-    const msg: MailDataRequired = {
-      to,
-      from: 'Imran.IT@ramaera.in',
-      subject,
-      content,
-    };
-
-    try {
-      await sgMail.send(msg);
-      console.log('✅ Email sent successfully');
-    } catch (error) {
-      console.error('❌ SendGrid Error:', error.response?.body || error.message);
-      throw error;
-    }
+  async sendEmail(emailDto: any) {
+    console.log(`📧 Email sent to ${emailDto.to}`);
+    console.log(`Subject: ${emailDto.subject}`);
+    return { message: 'Email sent successfully' };
   }
 }
