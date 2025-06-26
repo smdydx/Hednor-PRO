@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Product } from '../product/product.model';
+import { product as Product } from '../product/product.model';
 import { DeductStockDto } from './dto/deduct-stock.input';
 
 @Injectable()

@@ -92,11 +92,17 @@ export class RefundService {
   }
 
   async updateRefundStatus(input: any): Promise<Refund> {
-    return await this.refundModel.findByIdAndUpdate(
+    const refund = await this.refundModel.findByIdAndUpdate(
       input.refundId,
       { status: input.status, adminNotes: input.adminNotes },
       { new: true }
     ).exec();
+    
+    if (!refund) {
+      throw new NotFoundException('Refund not found');
+    }
+    
+    return refund;
   }
 
   async getRefundsByUser(userId: string): Promise<Refund[]> {
