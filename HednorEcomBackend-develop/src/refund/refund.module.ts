@@ -1,37 +1,21 @@
-// // src/refund/refund.module.ts
-// import { Module } from '@nestjs/common';
-// import { MongooseModule } from '@nestjs/mongoose';
-// import { Refund, RefundSchema } from './refund.model';
-// import { RefundResolver } from './refund.resolver';
-// import { RefundService } from './refund.service';
-// import { OrderModule } from '../order/order.module'; // 👈 import this
-
-
-// @Module({
-//   imports: [MongooseModule.forFeature([{ name: Refund.name, schema: RefundSchema }])
-// ],
-  
-//   providers: [RefundResolver, RefundService],
-  
-// })
-// export class RefundModule {}
-
-
 // src/refund/refund.module.ts
 import { Module } from '@nestjs/common';
+import { RefundResolver } from './refund.resolver';
+import { RefundController } from './refund.controller';
+import { RefundService } from './refund.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Refund, RefundSchema } from './refund.model';
-import { RefundResolver } from './refund.resolver';
-import { RefundService } from './refund.service';
-import { OrderModule } from '../order/order.module'; // 👈 Correct import
-import { EmailModule } from '../email/email.module'; // 👈 ADD THIS
+import { OrderModule } from '../order/order.module'; // Order schema ke liye
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Refund.name, schema: RefundSchema }]),
-    OrderModule, // 👈 Add this here
+    OrderModule, // 👈 Order model access karne ke liye
     EmailModule,
+
   ],
+  controllers: [RefundController],
   providers: [RefundResolver, RefundService],
 })
 export class RefundModule {}
