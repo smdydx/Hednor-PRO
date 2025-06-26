@@ -31,22 +31,43 @@ const PageSignUp = () => {
   const mutation = useMutation({
     mutationFn: signupAuth,
     onSuccess: (data) => {
+      console.log('Signup successful:', data);
       dispatch(tokenStore({ token: data.access_token }));
       alert("Signup successful!");
       setLoading(false);
+      router.push("/");
     },
-    onError: (error: Error) => {
-      alert(error.message);
+    onError: (error: any) => {
+      console.error('Signup failed:', error);
+      alert(`Signup failed: ${error?.response?.data?.message || error.message}`);
       setLoading(false);
     },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long");
+      return;
+    }
+    
+    console.log('Submitting signup with:', { name, email, password: '***' });
     setLoading(true);
     mutation.mutate({
-      name: name,
-      email: email,
+      name: name.trim(),
+      email: email.trim(),
       password: password,
     });
   };

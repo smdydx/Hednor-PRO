@@ -17,43 +17,51 @@ export class AuthService {
   ) {}
 
   async signup(dto: CreateAuthDto) {
-    const { email, password, firstName, lastName } = dto;
+    try {
+      console.log('Signup attempt for:', dto.email);
+      const { email, password, firstName, lastName } = dto;
 
-    // Check if user already exists
-    const existingUser = await this.authModel.findOne({ email });
-    if (existingUser) {
-      throw new BadRequestException('User with this email already exists');
+      // Check if user already exists
+      const existingUser = await this.authModel.findOne({ email });
+      if (existingUser) {
+        throw new BadRequestException('User with this email already exists');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create user
+      const user = new this.authModel({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        isVerified: true, // Set to true for now, implement email verification later
+      });
+
+      console.log('Saving user to database...');
+      await user.save();
+      console.log('User saved successfully:', user._id);
+
+      // Generate JWT token
+      const payload = { sub: user._id, email: user.email };
+      const access_token = this.jwtService.sign(payload);
+
+      return {
+        message: 'User registered successfully',
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isVerified: user.isVerified,
+        },
+        access_token,
+      };
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = new this.authModel({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      isVerified: true, // Set to true for now, implement email verification later
-    });
-
-    await user.save();
-
-    // Generate JWT token
-    const payload = { sub: user._id, email: user.email };
-    const access_token = this.jwtService.sign(payload);
-
-    return {
-      message: 'User registered successfully',
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isVerified: user.isVerified,
-      },
-      access_token,
-    };
   }
 
   async login(dto: LoginAuthDto) {

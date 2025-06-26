@@ -1,5 +1,4 @@
-
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Refund, RefundDocument } from './refund.model';
@@ -97,11 +96,11 @@ export class RefundService {
       { status: input.status, adminNotes: input.adminNotes },
       { new: true }
     ).exec();
-    
+
     if (!refund) {
       throw new NotFoundException('Refund not found');
     }
-    
+
     return refund;
   }
 

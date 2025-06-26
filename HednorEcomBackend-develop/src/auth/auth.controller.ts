@@ -12,7 +12,15 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.signup(createAuthDto);
+    try {
+      console.log('Register endpoint called with:', createAuthDto);
+      const result = await this.authService.signup(createAuthDto);
+      console.log('Registration successful');
+      return result;
+    } catch (error) {
+      console.error('Registration failed:', error.message);
+      throw error;
+    }
   }
 
   @Post('login')
