@@ -13,6 +13,7 @@ async function bootstrap() {
     app.setGlobalPrefix('api');
     await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
     console.log('🚀 Backend server running on http://0.0.0.0:4000');
+    console.log('📊 MongoDB connected successfully');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

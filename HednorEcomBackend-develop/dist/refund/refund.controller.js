@@ -15,45 +15,98 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefundController = void 0;
 const common_1 = require("@nestjs/common");
 const refund_service_1 = require("./refund.service");
-const create_refund_input_1 = require("./dto/create-refund.input");
-const update_refund_status_input_1 = require("./dto/update-refund-status.input");
+const passport_1 = require("@nestjs/passport");
 let RefundController = class RefundController {
     refundService;
     constructor(refundService) {
         this.refundService = refundService;
     }
-    async requestRefund(createRefundInput) {
-        return this.refundService.requestRefund(createRefundInput);
+    async create(createRefundDto, req) {
+        return this.refundService.create({
+            ...createRefundDto,
+            userId: req.user._id,
+            userEmail: req.user.email,
+        });
     }
-    async updateRefundStatus(updateRefundStatusInput) {
-        return this.refundService.updateRefundStatus(updateRefundStatusInput);
+    async findAll(req, page = '1', limit = '10', status) {
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        return this.refundService.findUserRefunds(req.user._id, pageNum, limitNum, status);
     }
-    async getRefundsByUser(userId) {
-        return this.refundService.getRefundsByUser(userId);
+    async findAllAdmin(page = '1', limit = '10', status) {
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        return this.refundService.findAllRefunds(pageNum, limitNum, status);
+    }
+    async findOne(id, req) {
+        return this.refundService.findOne(id, req.user._id);
+    }
+    async updateStatus(id, status, adminNotes) {
+        return this.refundService.updateStatus(id, status, adminNotes);
+    }
+    async remove(id, req) {
+        return this.refundService.cancelRefund(id, req.user._id);
     }
 };
 exports.RefundController = RefundController;
 __decorate([
     (0, common_1.Post)(),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_refund_input_1.CreateRefundInput]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
-], RefundController.prototype, "requestRefund", null);
+], RefundController.prototype, "create", null);
 __decorate([
-    (0, common_1.Put)('status'),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.Get)(),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [update_refund_status_input_1.UpdateRefundStatusInput]),
+    __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", Promise)
-], RefundController.prototype, "updateRefundStatus", null);
+], RefundController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)('user/:userId'),
-    __param(0, (0, common_1.Param)('userId')),
+    (0, common_1.Get)('admin/all'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
-], RefundController.prototype, "getRefundsByUser", null);
+], RefundController.prototype, "findAllAdmin", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RefundController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('status')),
+    __param(2, (0, common_1.Body)('adminNotes')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", Promise)
+], RefundController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RefundController.prototype, "remove", null);
 exports.RefundController = RefundController = __decorate([
     (0, common_1.Controller)('refunds'),
     __metadata("design:paramtypes", [refund_service_1.RefundService])

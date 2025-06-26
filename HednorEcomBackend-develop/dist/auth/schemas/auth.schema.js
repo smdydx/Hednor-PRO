@@ -12,23 +12,63 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthSchema = exports.Auth = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
 let Auth = class Auth {
-    username;
     email;
     password;
+    firstName;
+    lastName;
+    isVerified;
+    passwordResetToken;
+    passwordResetExpires;
+    role;
+    phoneNumber;
+    address;
+    avatar;
 };
 exports.Auth = Auth;
-__decorate([
-    (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", String)
-], Auth.prototype, "username", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true, unique: true }),
     __metadata("design:type", String)
 ], Auth.prototype, "email", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
+    (0, mongoose_1.Prop)({ required: true, select: false }),
     __metadata("design:type", String)
 ], Auth.prototype, "password", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], Auth.prototype, "firstName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], Auth.prototype, "lastName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], Auth.prototype, "isVerified", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Auth.prototype, "passwordResetToken", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Auth.prototype, "passwordResetExpires", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 'user' }),
+    __metadata("design:type", String)
+], Auth.prototype, "role", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Auth.prototype, "phoneNumber", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Auth.prototype, "address", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Auth.prototype, "avatar", void 0);
 exports.Auth = Auth = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Auth);

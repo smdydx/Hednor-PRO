@@ -22,8 +22,43 @@ let ProductService = class ProductService {
     constructor(productModel) {
         this.productModel = productModel;
     }
-    async findAll() {
-        return this.productModel.find().exec();
+    async create(productData) {
+        try {
+            const newProduct = new this.productModel(productData);
+            return await newProduct.save();
+        }
+        catch (error) {
+            throw new common_1.BadRequestException('Failed to create product');
+        }
+    }
+    async findAll(page = 1, limit = 10, category, search) {
+        const skip = (page - 1) * limit;
+        let query = {};
+        if (category) {
+            query.category = category;
+        }
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+            ];
+        }
+        const products = await this.productModel
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .exec();
+        const total = await this.productModel.countDocuments(query);
+        return {
+            products,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
     async findOne(id) {
         const product = await this.productModel.findById(id).exec();
@@ -32,12 +67,10 @@ let ProductService = class ProductService {
         }
         return product;
     }
-    async create(productData) {
-        const newProduct = new this.productModel(productData);
-        return newProduct.save();
-    }
     async update(id, updateData) {
-        const updatedProduct = await this.productModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+        const updatedProduct = await this.productModel
+            .findByIdAndUpdate(id, updateData, { new: true })
+            .exec();
         if (!updatedProduct) {
             throw new common_1.NotFoundException(`Product with ID ${id} not found`);
         }
@@ -48,6 +81,41 @@ let ProductService = class ProductService {
         if (!result) {
             throw new common_1.NotFoundException(`Product with ID ${id} not found`);
         }
+    }
+    async getCategories() {
+        const categories = await this.productModel.distinct('category').exec();
+        return { categories };
+    }
+    async getFeaturedProducts() {
+        const products = await this.productModel
+            .find({ featured: true })
+            .limit(8)
+            .exec();
+        return { products };
+    }
+    async addReview(productId, reviewData) {
+        const product = await this.productModel.findById(productId);
+        if (!product) {
+            throw new common_1.NotFoundException(`Product with ID ${productId} not found`);
+        }
+        if (!product.reviews) {
+            product.reviews = [];
+        }
+        product.reviews.push({
+            ...reviewData,
+            createdAt: new Date(),
+        });
+        const totalRating = product.reviews.reduce((sum, review) => sum + review.rating, 0);
+        product.averageRating = totalRating / product.reviews.length;
+        await product.save();
+        return { message: 'Review added successfully', product };
+    }
+    async getReviews(productId) {
+        const product = await this.productModel.findById(productId).select('reviews').exec();
+        if (!product) {
+            throw new common_1.NotFoundException(`Product with ID ${productId} not found`);
+        }
+        return { reviews: product.reviews || [] };
     }
 };
 exports.ProductService = ProductService;

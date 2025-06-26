@@ -15,23 +15,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailController = void 0;
 const common_1 = require("@nestjs/common");
 const email_service_1 = require("./email.service");
-const send_email_dto_1 = require("./dto/send-email.dto");
+const passport_1 = require("@nestjs/passport");
 let EmailController = class EmailController {
     emailService;
     constructor(emailService) {
         this.emailService = emailService;
     }
-    async sendEmail(sendEmailDto) {
-        await this.emailService.sendEmail(sendEmailDto);
-        return { message: 'Email sent successfully' };
+    async sendEmail(emailDto) {
+        return this.emailService.sendEmail(emailDto);
     }
 };
 exports.EmailController = EmailController;
 __decorate([
     (0, common_1.Post)('send'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [send_email_dto_1.SendEmailDto]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], EmailController.prototype, "sendEmail", null);
 exports.EmailController = EmailController = __decorate([

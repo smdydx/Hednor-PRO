@@ -11,25 +11,47 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderSchema = exports.Order = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
 let Order = class Order {
-    orderId;
+    userId;
+    userEmail;
+    trackingNumber;
     items;
     totalAmount;
-    coupanIds;
     status;
-    cartId;
-    paymentId;
-    userId;
-    address;
-    tracking;
+    paymentStatus;
+    shippingAddress;
+    billingAddress;
+    paymentMethod;
+    shippingMethod;
+    shippingCost;
+    tax;
+    discount;
+    notes;
+    estimatedDeliveryDate;
+    actualDeliveryDate;
 };
 exports.Order = Order;
 __decorate([
-    (0, mongoose_1.Prop)({ required: true, unique: true }),
-    __metadata("design:type", String)
-], Order.prototype, "orderId", void 0);
+    (0, mongoose_1.Prop)({ required: true, type: mongoose_2.Types.ObjectId, ref: 'Auth' }),
+    __metadata("design:type", mongoose_2.Types.ObjectId)
+], Order.prototype, "userId", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], Order.prototype, "userEmail", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true, unique: true }),
+    __metadata("design:type", String)
+], Order.prototype, "trackingNumber", void 0);
+__decorate([
+    (0, mongoose_1.Prop)([{
+            productId: { type: mongoose_2.Types.ObjectId, ref: 'product', required: true },
+            name: { type: String, required: true },
+            price: { type: Number, required: true },
+            quantity: { type: Number, required: true },
+            image: { type: String }
+        }]),
     __metadata("design:type", Array)
 ], Order.prototype, "items", void 0);
 __decorate([
@@ -37,37 +59,61 @@ __decorate([
     __metadata("design:type", Number)
 ], Order.prototype, "totalAmount", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: [String], default: [] }),
-    __metadata("design:type", Array)
-], Order.prototype, "coupanIds", void 0);
-__decorate([
     (0, mongoose_1.Prop)({
-        type: String,
-        enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'Processing', 'Rejected', 'Failed', 'Success'],
-        default: 'pending',
+        required: true,
+        enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+        default: 'pending'
     }),
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
+    (0, mongoose_1.Prop)({
+        required: true,
+        enum: ['pending', 'paid', 'failed', 'refunded'],
+        default: 'pending'
+    }),
     __metadata("design:type", String)
-], Order.prototype, "cartId", void 0);
+], Order.prototype, "paymentStatus", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", String)
-], Order.prototype, "paymentId", void 0);
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], Order.prototype, "shippingAddress", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", String)
-], Order.prototype, "userId", void 0);
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], Order.prototype, "billingAddress", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
-], Order.prototype, "address", void 0);
+], Order.prototype, "paymentMethod", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ default: '' }),
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
-], Order.prototype, "tracking", void 0);
+], Order.prototype, "shippingMethod", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Number)
+], Order.prototype, "shippingCost", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Number)
+], Order.prototype, "tax", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Number)
+], Order.prototype, "discount", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Order.prototype, "notes", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Order.prototype, "estimatedDeliveryDate", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Order.prototype, "actualDeliveryDate", void 0);
 exports.Order = Order = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Order);

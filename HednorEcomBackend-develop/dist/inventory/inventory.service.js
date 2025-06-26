@@ -43,6 +43,31 @@ let InventoryService = class InventoryService {
             });
         }
     }
+    async getLowStockProducts(threshold = 10) {
+        const products = await this.productModel
+            .find({ stock: { $lte: threshold } })
+            .select('name stock category price')
+            .exec();
+        return {
+            message: `Found ${products.length} products with low stock`,
+            products,
+            threshold,
+        };
+    }
+    async updateStock(productId, newStock) {
+        const product = await this.productModel.findByIdAndUpdate(productId, { stock: newStock }, { new: true });
+        if (!product) {
+            throw new common_1.NotFoundException(`Product ${productId} not found`);
+        }
+        return {
+            message: 'Stock updated successfully',
+            product: {
+                id: product._id,
+                name: product.name,
+                stock: product.stock,
+            },
+        };
+    }
 };
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = __decorate([

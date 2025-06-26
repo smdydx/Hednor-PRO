@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryController = void 0;
 const common_1 = require("@nestjs/common");
 const inventory_service_1 = require("./inventory.service");
+const passport_1 = require("@nestjs/passport");
 let InventoryController = class InventoryController {
     inventoryService;
     constructor(inventoryService) {
@@ -28,22 +29,48 @@ let InventoryController = class InventoryController {
         await this.inventoryService.restoreStock(items);
         return { message: 'Stock restored successfully' };
     }
+    async getLowStockProducts(threshold = '10') {
+        const thresholdNum = parseInt(threshold);
+        return this.inventoryService.getLowStockProducts(thresholdNum);
+    }
+    async updateStock(productId, stock) {
+        return this.inventoryService.updateStock(productId, stock);
+    }
 };
 exports.InventoryController = InventoryController;
 __decorate([
-    (0, common_1.Post)('deduct-stock'),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.Post)('deduct'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Body)('items')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], InventoryController.prototype, "deductStock", null);
 __decorate([
-    (0, common_1.Put)('restore-stock'),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.Post)('restore'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Body)('items')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], InventoryController.prototype, "restoreStock", null);
+__decorate([
+    (0, common_1.Get)('low-stock'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Query)('threshold')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], InventoryController.prototype, "getLowStockProducts", null);
+__decorate([
+    (0, common_1.Patch)('update/:productId'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Param)('productId')),
+    __param(1, (0, common_1.Body)('stock')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number]),
+    __metadata("design:returntype", Promise)
+], InventoryController.prototype, "updateStock", null);
 exports.InventoryController = InventoryController = __decorate([
     (0, common_1.Controller)('inventory'),
     __metadata("design:paramtypes", [inventory_service_1.InventoryService])

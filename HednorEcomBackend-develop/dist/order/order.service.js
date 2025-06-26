@@ -127,4 +127,166 @@ exports.OrderService = OrderService = __decorate([
         inventory_service_1.InventoryService,
         email_service_1.EmailService])
 ], OrderService);
+let OrderService = class OrderService {
+    orderModel;
+    inventoryService;
+    emailService;
+    constructor(orderModel, inventoryService, emailService) {
+        this.orderModel = orderModel;
+        this.inventoryService = inventoryService;
+        this.emailService = emailService;
+    }
+    async create(createOrderDto) {
+        try {
+            await this.inventoryService.deductStock(createOrderDto.items);
+            const trackingNumber = 'TRK' + Date.now() + Math.random().toString(36).substr(2, 9);
+            const totalAmount = createOrderDto.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+            const order = new this.orderModel({
+                ...createOrderDto,
+                trackingNumber,
+                totalAmount,
+                status: 'pending',
+                paymentStatus: 'pending',
+            });
+            const savedOrder = await order.save();
+            await this.emailService.sendOrderConfirmation(createOrderDto.userEmail, savedOrder.toObject());
+            return {
+                message: 'Order created successfully',
+                order: savedOrder,
+            };
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(error.message || 'Failed to create order');
+        }
+    }
+    async findUserOrders(userId, page = 1, limit = 10, status) {
+        const skip = (page - 1) * limit;
+        let query = { userId };
+        if (status) {
+            query.status = status;
+        }
+        const orders = await this.orderModel
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .exec();
+        const total = await this.orderModel.countDocuments(query);
+        return {
+            orders,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+    async findAllOrders(page = 1, limit = 10, status) {
+        const skip = (page - 1) * limit;
+        let query = {};
+        if (status) {
+            query.status = status;
+        }
+        const orders = await this.orderModel
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .exec();
+        const total = await this.orderModel.countDocuments(query);
+        return {
+            orders,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+    async findOne(id, userId) {
+        const order = await this.orderModel.findById(id).exec();
+        if (!order) {
+            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
+        }
+        if (userId && order.userId.toString() !== userId) {
+            throw new common_1.ForbiddenException('You can only view your own orders');
+        }
+        return { order };
+    }
+    async updateStatus(id, status) {
+        const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            throw new common_1.BadRequestException('Invalid status');
+        }
+        const order = await this.orderModel.findByIdAndUpdate(id, { status, updatedAt: new Date() }, { new: true }).exec();
+        if (!order) {
+            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
+        }
+        await this.emailService.sendOrderStatusUpdate(order.userEmail, order.toObject());
+        return {
+            message: 'Order status updated successfully',
+            order,
+        };
+    }
+    async cancelOrder(id, userId) {
+        const order = await this.orderModel.findById(id).exec();
+        if (!order) {
+            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
+        }
+        if (order.userId.toString() !== userId) {
+            throw new common_1.ForbiddenException('You can only cancel your own orders');
+        }
+        if (order.status === 'shipped' || order.status === 'delivered') {
+            throw new common_1.BadRequestException('Cannot cancel shipped or delivered orders');
+        }
+        if (order.status === 'cancelled') {
+            throw new common_1.BadRequestException('Order is already cancelled');
+        }
+        await this.inventoryService.restoreStock(order.items);
+        order.status = 'cancelled';
+        order.updatedAt = new Date();
+        await order.save();
+        return {
+            message: 'Order cancelled successfully',
+            order,
+        };
+    }
+    async trackOrder(trackingNumber) {
+        const order = await this.orderModel
+            .findOne({ trackingNumber })
+            .select('trackingNumber status createdAt updatedAt items totalAmount')
+            .exec();
+        if (!order) {
+            throw new common_1.NotFoundException(`Order with tracking number ${trackingNumber} not found`);
+        }
+        return { order };
+    }
+    async confirmPayment(id) {
+        const order = await this.orderModel.findById(id).exec();
+        if (!order) {
+            throw new common_1.NotFoundException(`Order with ID ${id} not found`);
+        }
+        if (order.paymentStatus === 'paid') {
+            throw new common_1.BadRequestException('Payment already confirmed');
+        }
+        order.paymentStatus = 'paid';
+        order.status = 'confirmed';
+        order.updatedAt = new Date();
+        await order.save();
+        return {
+            message: 'Payment confirmed successfully',
+            order,
+        };
+    }
+};
+exports.OrderService = OrderService;
+exports.OrderService = OrderService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model,
+        inventory_service_1.InventoryService,
+        email_service_1.EmailService])
+], OrderService);
 //# sourceMappingURL=order.service.js.map
