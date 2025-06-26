@@ -19,10 +19,15 @@ export const loginAuth = async ({ email, password }: { email: string; password: 
 };
 
 export const signupAuth = async ({ name, email, password }: { name: string; email: string; password: string }) => {
+  // Split name into firstName and lastName
+  const nameParts = name.trim().split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
   try {
     const response = await axios.post(`${BASE_URL}/api/auth/register`, {
-      firstName: name,
-      lastName: "",
+      firstName,
+      lastName,
       email,
       password,
     });

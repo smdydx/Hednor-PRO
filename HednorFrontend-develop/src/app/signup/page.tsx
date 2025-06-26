@@ -64,6 +64,7 @@ const PageSignUp = () => {
     }
     
     console.log('Submitting signup with:', { name, email, password: '***' });
+    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || "http://0.0.0.0:4000/api");
     setLoading(true);
     mutation.mutate({
       name: name.trim(),
